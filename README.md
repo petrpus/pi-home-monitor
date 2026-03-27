@@ -25,6 +25,12 @@ This project uses [Vitest](https://vitest.dev/) for testing. You can run the tes
 bun --bun run test
 ```
 
+Integration smoke test for ingest (requires running Postgres and migrated DB):
+
+```bash
+bun --bun run test:integration
+```
+
 ## Styling
 
 This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.

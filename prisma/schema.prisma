@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AgentStatus {
+  ONLINE
+  OFFLINE
+  DISABLED
+}
+
+enum DeviceKind {
+  NETWORK
+  BLUETOOTH
+  BLE
+  UNKNOWN
+}
+
+enum AlertType {
+  NEW_DEVICE
+  AGENT_OFFLINE
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model Agent {
+  id            String      @id @default(cuid())
+  name          String
+  apiKeyHash    String      @unique
+  locationLabel String?
+  status        AgentStatus @default(ONLINE)
+  lastSeenAt    DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  rawReports    RawReport[]
+  observations  Observation[]
+  alerts        Alert[]
+
+  @@index([status])
+  @@index([lastSeenAt])
+}
+
+model RawReport {
+  id             String        @id @default(cuid())
+  agentId        String
+  receivedAt     DateTime      @default(now())
+  reportedAt     DateTime?
+  payloadVersion String?
+  payload        Json
+
+  agent          Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  observations   Observation[]
+
+  @@index([agentId, receivedAt])
+  @@index([reportedAt])
+}
+
+model Device {
+  id             String      @id @default(cuid())
+  kind           DeviceKind
+  primaryMac     String?
+  normalizedName String?
+  vendor         String?
+  firstSeenAt    DateTime
+  lastSeenAt     DateTime
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  observations   Observation[]
+  alerts         Alert[]
+
+  @@index([kind])
+  @@index([primaryMac])
+  @@index([lastSeenAt])
+  @@unique([kind, primaryMac])
+}
+
+model Observation {
+  id            String    @id @default(cuid())
+  rawReportId   String
+  agentId       String
+  deviceId      String
+  observedAt    DateTime
+
+  ipAddress     String?
+  macAddress    String?
+  hostname      String?
+  bluetoothName String?
+  rssi          Int?
+  metadata      Json?
+
+  rawReport     RawReport @relation(fields: [rawReportId], references: [id], onDelete: Cascade)
+  agent         Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  device        Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, observedAt])
+  @@index([deviceId, observedAt])
+  @@index([macAddress])
+  @@index([ipAddress])
+}
+
+model Alert {
+  id         String        @id @default(cuid())
+  type       AlertType
+  severity   AlertSeverity
+  title      String
+  message    String?
+  isResolved Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  resolvedAt DateTime?
+
+  agentId    String?
+  deviceId   String?
+
+  agent      Agent?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  device     Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@index([isResolved, createdAt])
+}

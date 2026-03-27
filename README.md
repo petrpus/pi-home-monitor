@@ -151,6 +151,54 @@ export const Route = createFileRoute('/api/hello')({
 })
 ```
 
+## Ingest API (MVP)
+
+`POST /api/ingest`
+
+- Header: `x-api-key: <agent-api-key>`
+- Body (JSON):
+
+```json
+{
+  "reportedAt": "2026-03-27T10:00:00.000Z",
+  "payloadVersion": "1",
+  "networkDevices": [
+    {
+      "macAddress": "AA:BB:CC:DD:EE:FF",
+      "ipAddress": "192.168.1.10",
+      "hostname": "printer.local",
+      "name": "Office Printer",
+      "vendor": "HP"
+    }
+  ],
+  "bluetoothDevices": [
+    {
+      "macAddress": "11:22:33:44:55:66",
+      "name": "Headphones",
+      "rssi": -64,
+      "kind": "BLE",
+      "vendor": "Sony"
+    }
+  ]
+}
+```
+
+Local curl example:
+
+```bash
+curl -X POST "http://localhost:3000/api/ingest" \
+  -H "content-type: application/json" \
+  -H "x-api-key: your-agent-api-key" \
+  -d '{
+    "reportedAt":"2026-03-27T10:00:00.000Z",
+    "payloadVersion":"1",
+    "networkDevices":[{"macAddress":"AA:BB:CC:DD:EE:FF","ipAddress":"192.168.1.10"}],
+    "bluetoothDevices":[{"macAddress":"11:22:33:44:55:66","name":"Headphones","rssi":-64,"kind":"BLE"}]
+  }'
+```
+
+Current MVP limitation: devices without a MAC address are saved in the raw report payload, but skipped from `Device` and `Observation` normalization to avoid unsafe identity collisions.
+
 ## Data Fetching
 
 There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.

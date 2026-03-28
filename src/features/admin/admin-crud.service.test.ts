@@ -272,6 +272,28 @@ describe('adminList', () => {
     )
   })
 
+  it('uses raw SQL order for agents when sortBy is status (activity presence, not enum alone)', async () => {
+    const findMany = vi.fn()
+    const count = vi.fn().mockResolvedValue(0)
+    const queryRaw = vi.fn().mockResolvedValue([])
+    getPrismaClient.mockReturnValue({
+      agent: { findMany, count },
+      $queryRaw: queryRaw,
+    })
+
+    await adminList({
+      resource: 'agents',
+      page: 1,
+      pageSize: 20,
+      sortBy: 'status',
+      sortDir: 'asc',
+    })
+
+    expect(findMany).not.toHaveBeenCalled()
+    expect(queryRaw).toHaveBeenCalledTimes(1)
+    expect(count).toHaveBeenCalledWith({ where: {} })
+  })
+
   it('filters devices by kind and observing agent', async () => {
     const findMany = vi.fn().mockResolvedValue([])
     const count = vi.fn().mockResolvedValue(0)

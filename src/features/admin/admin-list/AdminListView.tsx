@@ -14,7 +14,7 @@ import {
   Undo2,
   X,
 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { DashboardShell } from "#/components/dashboard-shell"
 import {
@@ -58,6 +58,10 @@ import { DeviceKindCell } from "#/features/admin/admin-list/DeviceKindCell"
 import { DeviceNameEditDialog } from "#/features/admin/admin-list/DeviceNameEditDialog"
 import { EntityFormDialog } from "#/features/admin/admin-list/EntityFormDialog"
 import { cn } from "#/lib/utils"
+import {
+  readAdminListPrefs,
+  writeAdminListPrefs,
+} from "#/features/admin/admin-list/admin-list-preferences-cookie"
 
 /** 1 položka, 2–4 položky (except 12–14), otherwise položek. */
 function czechPoložkaForm(n: number): "položka" | "položky" | "položek" {
@@ -97,6 +101,44 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
     setSelected(new Set())
     setBulkOpen(false)
   }, [resource])
+  useLayoutEffect(() => {
+    const p = readAdminListPrefs(resource)
+    setSortBy(p.sortBy)
+    setSortDir(p.sortDir)
+    setSearch(p.search)
+    setSearchDraft(p.search)
+    setPageSize(p.pageSize)
+    setFilterResolved(p.filterResolved)
+    setFilterAgentStatus(p.filterAgentStatus)
+    setFilterDeviceKind(p.filterDeviceKind)
+    setFilterDeviceAgentId(p.filterDeviceAgentId)
+    setPage(1)
+  }, [resource])
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      writeAdminListPrefs(resource, {
+        sortBy,
+        sortDir,
+        search,
+        pageSize,
+        filterResolved,
+        filterAgentStatus,
+        filterDeviceKind,
+        filterDeviceAgentId,
+      })
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [
+    resource,
+    sortBy,
+    sortDir,
+    search,
+    pageSize,
+    filterResolved,
+    filterAgentStatus,
+    filterDeviceKind,
+    filterDeviceAgentId,
+  ])
   const listFn = useServerFn(adminListFn)
   const mutateFn = useServerFn(adminMutateFn)
   const filters = useMemo(() => {

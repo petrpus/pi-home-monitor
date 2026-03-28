@@ -1,6 +1,5 @@
 import * as z from 'zod'
-import type { Prisma } from '../../../generated/prisma/client'
-import { AgentStatus } from '../../../generated/prisma/client'
+import { AgentStatus, Prisma } from '../../../generated/prisma/client'
 import { agentReportFreshnessThreshold } from '#/features/agents/agent-activity'
 import { hashApiKey } from '#/features/agents/agent-auth.server'
 import { getPrismaClient } from '#/lib/prismaDb'
@@ -34,6 +33,58 @@ function alertListOrderBy(
     'createdAt',
     'desc',
   )
+}
+
+/**
+ * Shared Prisma where + equivalent SQL fragments for agent admin list (kept in sync for raw ORDER BY).
+ * UI “Stav” sorts by activity presence (see `getAgentActivityPresence`), not raw `status` enum alone.
+ */
+function agentAdminListWhereAndSql(
+  q: ListQuery,
+  staleBefore: Date,
+): { where: Prisma.AgentWhereInput; sqlFragments: Prisma.Sql[] } {
+  const and: Prisma.AgentWhereInput[] = []
+  const sqlFragments: Prisma.Sql[] = []
+
+  if (q.filters?.agentStatus && q.filters.agentStatus !== 'all') {
+    if (q.filters.agentStatus === 'DISABLED') {
+      and.push({ status: AgentStatus.DISABLED })
+      sqlFragments.push(Prisma.sql`status = ${AgentStatus.DISABLED}`)
+    } else if (q.filters.agentStatus === 'ONLINE') {
+      and.push({
+        status: { not: AgentStatus.DISABLED },
+        lastSeenAt: { gte: staleBefore },
+      })
+      sqlFragments.push(
+        Prisma.sql`(status <> ${AgentStatus.DISABLED} AND "lastSeenAt" >= ${staleBefore})`,
+      )
+    } else if (q.filters.agentStatus === 'OFFLINE') {
+      and.push({
+        status: { not: AgentStatus.DISABLED },
+        OR: [{ lastSeenAt: null }, { lastSeenAt: { lt: staleBefore } }],
+      })
+      sqlFragments.push(
+        Prisma.sql`(status <> ${AgentStatus.DISABLED} AND ("lastSeenAt" IS NULL OR "lastSeenAt" < ${staleBefore}))`,
+      )
+    }
+  }
+
+  const term = q.search?.trim()
+  if (term) {
+    and.push({
+      OR: [
+        { name: { contains: term, mode: 'insensitive' } },
+        { locationLabel: { contains: term, mode: 'insensitive' } },
+      ],
+    })
+    const pattern = `%${term}%`
+    sqlFragments.push(Prisma.sql`(name ILIKE ${pattern} OR "locationLabel" ILIKE ${pattern})`)
+  }
+
+  return {
+    where: and.length ? { AND: and } : {},
+    sqlFragments,
+  }
 }
 
 function rawReportListOrderBy(
@@ -110,39 +161,7 @@ export async function adminList(q: ListQuery): Promise<{
     }
     case 'agents': {
       const staleBefore = agentReportFreshnessThreshold()
-      const and: Prisma.AgentWhereInput[] = []
-      if (q.filters?.agentStatus && q.filters.agentStatus !== 'all') {
-        if (q.filters.agentStatus === 'DISABLED') {
-          and.push({ status: AgentStatus.DISABLED })
-        } else if (q.filters.agentStatus === 'ONLINE') {
-          and.push({
-            status: { not: AgentStatus.DISABLED },
-            lastSeenAt: { gte: staleBefore },
-          })
-        } else if (q.filters.agentStatus === 'OFFLINE') {
-          and.push({
-            status: { not: AgentStatus.DISABLED },
-            OR: [{ lastSeenAt: null }, { lastSeenAt: { lt: staleBefore } }],
-          })
-        }
-      }
-      const term = q.search?.trim()
-      if (term) {
-        and.push({
-          OR: [
-            { name: { contains: term, mode: 'insensitive' } },
-            { locationLabel: { contains: term, mode: 'insensitive' } },
-          ],
-        })
-      }
-      const where: Prisma.AgentWhereInput = and.length ? { AND: and } : {}
-      const orderBy = buildOrderBy(
-        q.sortBy,
-        q.sortDir,
-        ['name', 'status', 'lastSeenAt'] as const,
-        'lastSeenAt',
-        'desc',
-      )
+      const { where, sqlFragments } = agentAdminListWhereAndSql(q, staleBefore)
       const select = {
         id: true,
         name: true,
@@ -150,6 +169,43 @@ export async function adminList(q: ListQuery): Promise<{
         status: true,
         lastSeenAt: true,
       } satisfies Prisma.AgentSelect
+
+      if (q.sortBy === 'status') {
+        type AgentListRow = {
+          id: string
+          name: string
+          locationLabel: string | null
+          status: string
+          lastSeenAt: Date | null
+        }
+        const whereClause =
+          sqlFragments.length > 0
+            ? Prisma.sql`WHERE ${Prisma.join(sqlFragments, ' AND ')}`
+            : Prisma.empty
+        const presenceOrder =
+          q.sortDir === 'asc'
+            ? Prisma.sql`ORDER BY (CASE WHEN status = ${AgentStatus.DISABLED} THEN 2 WHEN "lastSeenAt" IS NULL OR "lastSeenAt" < ${staleBefore} THEN 1 ELSE 0 END) ASC, name ASC`
+            : Prisma.sql`ORDER BY (CASE WHEN status = ${AgentStatus.DISABLED} THEN 2 WHEN "lastSeenAt" IS NULL OR "lastSeenAt" < ${staleBefore} THEN 1 ELSE 0 END) DESC, name ASC`
+        const [rows, total] = await Promise.all([
+          prisma.$queryRaw<AgentListRow[]>`
+            SELECT id, name, "locationLabel", status, "lastSeenAt"
+            FROM "Agent"
+            ${whereClause}
+            ${presenceOrder}
+            OFFSET ${skip} LIMIT ${take}
+          `,
+          prisma.agent.count({ where }),
+        ])
+        return { rows, total, page: q.page, pageSize: q.pageSize }
+      }
+
+      const orderBy = buildOrderBy(
+        q.sortBy,
+        q.sortDir,
+        ['name', 'status', 'lastSeenAt'] as const,
+        'lastSeenAt',
+        'desc',
+      )
       const [rows, total] = await Promise.all([
         prisma.agent.findMany({ where, orderBy, skip, take, select }),
         prisma.agent.count({ where }),

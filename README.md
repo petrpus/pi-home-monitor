@@ -163,6 +163,14 @@ export const Route = createFileRoute('/api/hello')({
 })
 ```
 
+## Health
+
+`GET /health` returns `200` with plain text body `ok`, `Content-Type: text/plain; charset=utf-8`, and `Cache-Control: no-store` (for probes and load balancers).
+
+```bash
+curl -sS -D - http://localhost:3000/health
+```
+
 ## Ingest API (MVP)
 
 `POST /api/ingest`

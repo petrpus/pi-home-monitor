@@ -1,18 +1,30 @@
 import * as z from 'zod'
 import { DeviceKind } from '../../../generated/prisma/client'
 
-const optionalString = z
-  .string()
-  .trim()
-  .min(1)
-  .max(255)
-  .optional()
+/** Treat missing, null, and whitespace-only strings as absent (scanners often send ""). */
+function emptyToUndefined(value: unknown): unknown {
+  if (value === undefined || value === null) {
+    return undefined
+  }
+  if (typeof value !== 'string') {
+    return value
+  }
+  const trimmed = value.trim()
+  return trimmed === '' ? undefined : trimmed
+}
 
-const optionalMacAddress = z
-  .string()
-  .trim()
-  .regex(/^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/, 'Invalid MAC address format')
-  .optional()
+const optionalString = z.preprocess(
+  emptyToUndefined,
+  z.string().min(1).max(255).optional(),
+)
+
+const optionalMacAddress = z.preprocess(
+  emptyToUndefined,
+  z
+    .string()
+    .regex(/^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/, 'Invalid MAC address format')
+    .optional(),
+)
 
 const networkDeviceSchema = z
   .object({
@@ -41,7 +53,10 @@ const bluetoothDeviceSchema = z
 export const ingestRequestSchema = z
   .object({
     reportedAt: z.iso.datetime().optional(),
-    payloadVersion: z.string().trim().min(1).max(32).optional(),
+    payloadVersion: z.preprocess(
+      emptyToUndefined,
+      z.string().min(1).max(32).optional(),
+    ),
     networkDevices: z.array(networkDeviceSchema).default([]),
     bluetoothDevices: z.array(bluetoothDeviceSchema).default([]),
   })

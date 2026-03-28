@@ -44,6 +44,26 @@ describe('ingestRequestSchema', () => {
 
     expect(parsed.success).toBe(false)
   })
+
+  it('accepts empty-string optional fields as absent (scanner payloads)', () => {
+    const parsed = ingestRequestSchema.safeParse({
+      networkDevices: [
+        {
+          macAddress: 'AA:BB:CC:DD:EE:FF',
+          hostname: '',
+          name: '   ',
+          vendor: '',
+        },
+      ],
+    })
+
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.networkDevices[0].hostname).toBeUndefined()
+      expect(parsed.data.networkDevices[0].name).toBeUndefined()
+      expect(parsed.data.networkDevices[0].vendor).toBeUndefined()
+    }
+  })
 })
 
 describe('normalizers', () => {

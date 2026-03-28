@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AlertSeverity, AlertType } from '../../../generated/prisma/client'
+import { DeviceKind } from '../../../generated/prisma/client'
 import { hashApiKey } from '#/features/agents/agent-auth.server'
-import { adminMutate } from './admin-crud.service'
+import { adminList, adminMutate } from './admin-crud.service'
 
 const getPrismaClient = vi.hoisted(() => vi.fn())
 
@@ -151,5 +152,271 @@ describe('adminMutate', () => {
         title: 'T',
       }),
     })
+  })
+})
+
+describe('adminList', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('applies isResolved yes filter for alerts', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ alert: { findMany, count } })
+
+    await adminList({
+      resource: 'alerts',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+      filters: { isResolved: 'yes' },
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { isResolved: true },
+        skip: 0,
+        take: 20,
+      }),
+    )
+    expect(count).toHaveBeenCalledWith({ where: { isResolved: true } })
+  })
+
+  it('adds search OR for alerts', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ alert: { findMany, count } })
+
+    await adminList({
+      resource: 'alerts',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+      search: '  printer  ',
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            { title: { contains: 'printer', mode: 'insensitive' } },
+            { message: { contains: 'printer', mode: 'insensitive' } },
+            { agent: { name: { contains: 'printer', mode: 'insensitive' } } },
+          ],
+        },
+      }),
+    )
+  })
+
+  it('orders alerts by agent name when sortBy is agentName', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ alert: { findMany, count } })
+
+    await adminList({
+      resource: 'alerts',
+      page: 1,
+      pageSize: 20,
+      sortBy: 'agentName',
+      sortDir: 'asc',
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { agent: { name: 'asc' } },
+      }),
+    )
+  })
+
+  it('maps alert rows with agentName', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'a1',
+        type: AlertType.NEW_DEVICE,
+        severity: AlertSeverity.INFO,
+        message: 'm',
+        isResolved: false,
+        createdAt: new Date('2026-01-01'),
+        agent: { name: 'Pi' },
+      },
+    ])
+    const count = vi.fn().mockResolvedValue(1)
+    getPrismaClient.mockReturnValue({ alert: { findMany, count } })
+
+    const out = await adminList({
+      resource: 'alerts',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+    })
+
+    expect(out.rows).toEqual([
+      expect.objectContaining({
+        id: 'a1',
+        agentName: 'Pi',
+        message: 'm',
+        isResolved: false,
+      }),
+    ])
+    expect(out.total).toBe(1)
+  })
+
+  it('filters agents by DISABLED status', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ agent: { findMany, count } })
+
+    await adminList({
+      resource: 'agents',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+      filters: { agentStatus: 'DISABLED' },
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { AND: [{ status: 'DISABLED' }] },
+      }),
+    )
+  })
+
+  it('filters devices by kind and observing agent', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ device: { findMany, count } })
+
+    await adminList({
+      resource: 'devices',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+      filters: { deviceKind: 'BLE', deviceAgentId: 'agent-x' },
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          kind: DeviceKind.BLE,
+          observations: { some: { agentId: 'agent-x' } },
+        },
+      }),
+    )
+  })
+
+  it('maps rawReports rows with agentName and deviceCount', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'rr1',
+        receivedAt: new Date('2026-01-02'),
+        reportedAt: new Date('2026-01-01'),
+        agent: { name: 'Hub' },
+        _count: { observations: 3 },
+      },
+    ])
+    const count = vi.fn().mockResolvedValue(1)
+    getPrismaClient.mockReturnValue({ rawReport: { findMany, count } })
+
+    const out = await adminList({
+      resource: 'rawReports',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+    })
+
+    expect(out.rows).toEqual([
+      {
+        id: 'rr1',
+        agentName: 'Hub',
+        deviceCount: 3,
+        receivedAt: new Date('2026-01-02'),
+        reportedAt: new Date('2026-01-01'),
+      },
+    ])
+  })
+
+  it('uses skip and take for pagination', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ alert: { findMany, count } })
+
+    await adminList({
+      resource: 'alerts',
+      page: 3,
+      pageSize: 15,
+      sortDir: 'desc',
+    })
+
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 30, take: 15 }))
+  })
+
+  it('update alert sets resolvedAt when marking resolved', async () => {
+    const update = vi.fn().mockResolvedValue({ id: 'a1' })
+    getPrismaClient.mockReturnValue({ alert: { update } })
+
+    const out = await adminMutate({
+      operation: 'update',
+      resource: 'alerts',
+      id: 'a1',
+      payload: { isResolved: true },
+    })
+
+    expect(out).toMatchObject({ result: { id: 'a1' } })
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'a1' },
+      data: expect.objectContaining({
+        isResolved: true,
+        resolvedAt: expect.any(Date),
+      }),
+    })
+  })
+
+  it('update alert clears resolvedAt when unresolving', async () => {
+    const update = vi.fn().mockResolvedValue({ id: 'a1' })
+    getPrismaClient.mockReturnValue({ alert: { update } })
+
+    await adminMutate({
+      operation: 'update',
+      resource: 'alerts',
+      id: 'a1',
+      payload: { isResolved: false },
+    })
+
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'a1' },
+      data: expect.objectContaining({
+        isResolved: false,
+        resolvedAt: null,
+      }),
+    })
+  })
+
+  it('delete alert calls prisma delete', async () => {
+    const del = vi.fn().mockResolvedValue({})
+    getPrismaClient.mockReturnValue({ alert: { delete: del } })
+
+    const out = await adminMutate({
+      operation: 'delete',
+      resource: 'alerts',
+      id: 'del-1',
+    })
+
+    expect(out).toEqual({ result: { id: 'del-1' } })
+    expect(del).toHaveBeenCalledWith({ where: { id: 'del-1' } })
+  })
+
+  it('bulkDelete alerts uses deleteMany', async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 2 })
+    getPrismaClient.mockReturnValue({ alert: { deleteMany } })
+
+    const out = await adminMutate({
+      operation: 'bulkDelete',
+      resource: 'alerts',
+      ids: ['x', 'y'],
+    })
+
+    expect(out).toMatchObject({ result: { deleted: 2 } })
+    expect(deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['x', 'y'] } } })
   })
 })

@@ -44,7 +44,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "#/components/ui/table"
 import { RESOURCE_TITLE } from "#/features/admin/admin-resource-copy"
 import { adminListFn, adminMutateFn } from "#/features/admin/adminApiFns"
-import type { AdminResourceKey, MutateBody } from "#/features/admin/admin-types"
+import type {
+  AdminListEmbedOptions,
+  AdminListUrlSearchDefaults,
+  AdminResourceKey,
+  MutateBody,
+} from "#/features/admin/admin-types"
 import { adminColumnLabel } from "#/features/admin/admin-list/admin-column-labels"
 import {
   ADMIN_DELETE_ONLY,
@@ -81,7 +86,15 @@ const PAGE_SIZE_OPTIONS: { value: number; label: string }[] = [
   { value: 100, label: "Vše" },
 ]
 
-export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }) {
+export function AdminEntityListPage({
+  resource,
+  embed,
+  urlSearchDefaults,
+}: {
+  resource: AdminResourceKey
+  embed?: AdminListEmbedOptions
+  urlSearchDefaults?: AdminListUrlSearchDefaults
+}) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(20)
   const [sortBy, setSortBy] = useState<string | undefined>()
@@ -92,6 +105,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
   const [filterAgentStatus, setFilterAgentStatus] = useState<"all" | "ONLINE" | "OFFLINE" | "DISABLED">("all")
   const [filterDeviceKind, setFilterDeviceKind] = useState<"all" | "NETWORK" | "BLUETOOTH" | "BLE" | "UNKNOWN">("all")
   const [filterDeviceAgentId, setFilterDeviceAgentId] = useState<"all" | string>("all")
+  const [filterAlertAgentId, setFilterAlertAgentId] = useState<"all" | string>("all")
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkOpen, setBulkOpen] = useState(false)
   const [editRow, setEditRow] = useState<Record<string, unknown> | null>(null)
@@ -109,12 +123,19 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
     setSearch(p.search)
     setSearchDraft(p.search)
     setPageSize(p.pageSize)
-    setFilterResolved(p.filterResolved)
+    let nextResolved = p.filterResolved
+    let nextAlertAgent = p.filterAlertAgentId ?? "all"
+    if (resource === "alerts" && urlSearchDefaults) {
+      if (urlSearchDefaults.agentId) nextAlertAgent = urlSearchDefaults.agentId
+      if (urlSearchDefaults.resolved !== undefined) nextResolved = urlSearchDefaults.resolved
+    }
+    setFilterResolved(nextResolved)
     setFilterAgentStatus(p.filterAgentStatus)
     setFilterDeviceKind(p.filterDeviceKind)
     setFilterDeviceAgentId(p.filterDeviceAgentId)
+    setFilterAlertAgentId(nextAlertAgent)
     setPage(1)
-  }, [resource])
+  }, [resource, urlSearchDefaults?.agentId, urlSearchDefaults?.resolved])
   useEffect(() => {
     const t = window.setTimeout(() => {
       writeAdminListPrefs(resource, {
@@ -126,6 +147,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
         filterAgentStatus,
         filterDeviceKind,
         filterDeviceAgentId,
+        filterAlertAgentId,
       })
     }, 0)
     return () => window.clearTimeout(t)
@@ -139,6 +161,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
     filterAgentStatus,
     filterDeviceKind,
     filterDeviceAgentId,
+    filterAlertAgentId,
   ])
   const listFn = useServerFn(adminListFn)
   const mutateFn = useServerFn(adminMutateFn)
@@ -148,13 +171,25 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
       agentStatus?: "all" | "ONLINE" | "OFFLINE" | "DISABLED"
       deviceKind?: "all" | "NETWORK" | "BLUETOOTH" | "BLE" | "UNKNOWN"
       deviceAgentId?: string
+      alertAgentId?: string
     } = {}
     if (resource === "alerts" && filterResolved !== "all") f.isResolved = filterResolved
+    if (resource === "alerts" && filterAlertAgentId !== "all") f.alertAgentId = filterAlertAgentId
     if (resource === "agents" && filterAgentStatus !== "all") f.agentStatus = filterAgentStatus
     if (resource === "devices" && filterDeviceKind !== "all") f.deviceKind = filterDeviceKind
     if (resource === "devices" && filterDeviceAgentId !== "all") f.deviceAgentId = filterDeviceAgentId
-    return Object.keys(f).length ? f : undefined
-  }, [resource, filterResolved, filterAgentStatus, filterDeviceKind, filterDeviceAgentId])
+    const base = Object.keys(f).length ? f : undefined
+    if (!embed?.forcedFilters) return base
+    return { ...(base ?? {}), ...embed.forcedFilters }
+  }, [
+    resource,
+    filterResolved,
+    filterAgentStatus,
+    filterDeviceKind,
+    filterDeviceAgentId,
+    filterAlertAgentId,
+    embed?.forcedFilters,
+  ])
   const query = useQuery({
     queryKey: ["admin-list", resource, page, pageSize, sortBy, sortDir, search, filters],
     queryFn: () =>
@@ -162,8 +197,8 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
         data: { resource, page, pageSize, sortBy, sortDir, search: search || undefined, filters },
       }),
   })
-  const agentsForDeviceFilterQuery = useQuery({
-    queryKey: ["admin-list", "agents", "device-filter-picker"],
+  const agentsForPickerQuery = useQuery({
+    queryKey: ["admin-list", "agents", "filter-picker"],
     queryFn: () =>
       listFn({
         data: {
@@ -174,7 +209,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
           sortDir: "asc",
         },
       }),
-    enabled: resource === "devices",
+    enabled: resource === "devices" || resource === "alerts",
   })
   const mutate = useMutation({
     mutationFn: async (body: MutateBody) => {
@@ -223,12 +258,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
     setPage(1)
   }
   const colSpan = Math.max(cols.length, 1) + (showRowActions ? 2 : 0)
-  return (
-    <DashboardShell activeResource={resource}>
-      <DashboardPageShell
-        title={RESOURCE_TITLE[resource]}
-        description={`Stránka ${page} / ${totalPages}, celkem ${total} ${czechPoložkaForm(total)}`}
-        headerEnd={
+  const paginationHeader = (
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex flex-row items-center gap-2">
               <Label htmlFor="admin-page-size" className="mb-0 shrink-0 text-muted-foreground">
@@ -300,8 +330,8 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
               </Button>
             </div>
           </div>
-        }
-      >
+  )
+  const listCard = (
         <Card>
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <CardTitle className="text-base">Filtry</CardTitle>
@@ -378,25 +408,59 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
               </div>
               <div className="flex flex-wrap gap-3 sm:gap-4">
                 {resource === "alerts" ? (
-                  <div className="flex flex-col gap-1">
-                    <Label htmlFor="admin-filter-resolved">Vyřešeno</Label>
-                    <Select
-                      value={filterResolved}
-                      onValueChange={(v) => {
-                        setFilterResolved(v as typeof filterResolved)
-                        setPage(1)
-                      }}
-                    >
-                      <SelectTrigger id="admin-filter-resolved" className="w-[min(100%,11rem)]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Vše</SelectItem>
-                        <SelectItem value="yes">Ano</SelectItem>
-                        <SelectItem value="no">Ne</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="admin-filter-alert-agent">Agent</Label>
+                      <Select
+                        value={filterAlertAgentId}
+                        disabled={agentsForPickerQuery.isLoading}
+                        onValueChange={(v) => {
+                          setFilterAlertAgentId(v)
+                          setPage(1)
+                        }}
+                      >
+                        <SelectTrigger
+                          id="admin-filter-alert-agent"
+                          className="min-w-[12rem] w-[min(100%,18rem)]"
+                        >
+                          <SelectValue
+                            placeholder={agentsForPickerQuery.isLoading ? "Načítání…" : "Vše"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Vše</SelectItem>
+                          {agentsForPickerQuery.data?.ok && agentsForPickerQuery.data.rows
+                            ? (agentsForPickerQuery.data.rows as { id: string; name: string }[]).map(
+                                (a) => (
+                                  <SelectItem key={a.id} value={a.id}>
+                                    {a.name}
+                                  </SelectItem>
+                                ),
+                              )
+                            : null}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="admin-filter-resolved">Vyřešeno</Label>
+                      <Select
+                        value={filterResolved}
+                        onValueChange={(v) => {
+                          setFilterResolved(v as typeof filterResolved)
+                          setPage(1)
+                        }}
+                      >
+                        <SelectTrigger id="admin-filter-resolved" className="w-[min(100%,11rem)]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Vše</SelectItem>
+                          <SelectItem value="yes">Ano</SelectItem>
+                          <SelectItem value="no">Ne</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
                 ) : null}
                 {resource === "agents" ? (
                   <div className="flex min-w-0 flex-col gap-1">
@@ -426,19 +490,19 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
                       <Label htmlFor="admin-filter-device-agent">Agent</Label>
                       <Select
                         value={filterDeviceAgentId}
-                        disabled={agentsForDeviceFilterQuery.isLoading}
+                        disabled={agentsForPickerQuery.isLoading}
                         onValueChange={(v) => {
                           setFilterDeviceAgentId(v)
                           setPage(1)
                         }}
                       >
                         <SelectTrigger id="admin-filter-device-agent" className="min-w-[12rem] w-[min(100%,18rem)]">
-                          <SelectValue placeholder={agentsForDeviceFilterQuery.isLoading ? "Načítání…" : "Vše"} />
+                          <SelectValue placeholder={agentsForPickerQuery.isLoading ? "Načítání…" : "Vše"} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Vše</SelectItem>
-                          {agentsForDeviceFilterQuery.data?.ok && agentsForDeviceFilterQuery.data.rows
-                            ? (agentsForDeviceFilterQuery.data.rows as { id: string; name: string }[]).map((a) => (
+                          {agentsForPickerQuery.data?.ok && agentsForPickerQuery.data.rows
+                            ? (agentsForPickerQuery.data.rows as { id: string; name: string }[]).map((a) => (
                                 <SelectItem key={a.id} value={a.id}>
                                   {a.name}
                                 </SelectItem>
@@ -602,7 +666,9 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
             </div>
           </CardContent>
         </Card>
-      </DashboardPageShell>
+  )
+  const modals = (
+      <>
       <AlertDialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Smazat vybrané?</AlertDialogTitle>
@@ -648,6 +714,39 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
           }}
         />
       ) : null}
+      </>
+  )
+
+  if (embed) {
+    return (
+      <>
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-foreground">{embed.listSectionTitle}</h2>
+              {embed.listSectionDescription ? (
+                <p className="text-sm text-muted-foreground">{embed.listSectionDescription}</p>
+              ) : null}
+            </div>
+            {paginationHeader}
+          </div>
+          {listCard}
+        </div>
+        {modals}
+      </>
+    )
+  }
+
+  return (
+    <DashboardShell activeResource={resource}>
+      <DashboardPageShell
+        title={RESOURCE_TITLE[resource]}
+        description={`Stránka ${page} / ${totalPages}, celkem ${total} ${czechPoložkaForm(total)}`}
+        headerEnd={paginationHeader}
+      >
+        {listCard}
+      </DashboardPageShell>
+      {modals}
     </DashboardShell>
   )
 }

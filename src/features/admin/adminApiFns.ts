@@ -21,29 +21,6 @@ async function guardAdmin(): Promise<
   }
 }
 
-export const getDashboardStatsFn = createServerFn({ method: 'GET' }).handler(async () => {
-  const sessionMod = await import('#/features/auth/sessionAdmin.server')
-  await sessionMod.assertAdminSession()
-  const { getPrismaClient } = await import('#/lib/prismaDb')
-  const prisma = getPrismaClient()
-  const operationId = newOpId()
-  const dayAgo = new Date(Date.now() - 864e5)
-  const [agents, devices, openAlerts, reportsLast24h] = await Promise.all([
-    prisma.agent.count(),
-    prisma.device.count(),
-    prisma.alert.count({ where: { isResolved: false } }),
-    prisma.rawReport.count({ where: { receivedAt: { gte: dayAgo } } }),
-  ])
-  return {
-    ok: true as const,
-    operationId,
-    agents,
-    devices,
-    openAlerts,
-    reportsLast24h,
-  }
-})
-
 export const adminListFn = createServerFn({ method: 'POST' })
   .inputValidator((raw: unknown) => listQuerySchema.parse(raw))
   .handler(async ({ data }) => {

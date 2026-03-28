@@ -44,6 +44,22 @@ describe('listQuerySchema', () => {
       deviceAgentId: 'agent-1',
     })
   })
+
+  it('accepts alertAgentId filter', () => {
+    const parsed = listQuerySchema.parse({
+      resource: 'alerts',
+      filters: { alertAgentId: 'agent-x' },
+    })
+    expect(parsed.filters?.alertAgentId).toBe('agent-x')
+  })
+
+  it('rejects empty alertAgentId', () => {
+    const r = listQuerySchema.safeParse({
+      resource: 'alerts',
+      filters: { alertAgentId: '' },
+    })
+    expect(r.success).toBe(false)
+  })
 })
 
 describe('mutateBodySchema', () => {

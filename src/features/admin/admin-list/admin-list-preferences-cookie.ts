@@ -13,6 +13,7 @@ const resourcePrefsSchema = z.object({
   filterAgentStatus: z.enum(['all', 'ONLINE', 'OFFLINE', 'DISABLED']).default('all'),
   filterDeviceKind: z.enum(['all', 'NETWORK', 'BLUETOOTH', 'BLE', 'UNKNOWN']).default('all'),
   filterDeviceAgentId: z.union([z.literal('all'), z.string().min(1)]).default('all'),
+  filterAlertAgentId: z.union([z.literal('all'), z.string().min(1)]).default('all'),
 })
 
 export type AdminListResourcePrefs = z.infer<typeof resourcePrefsSchema>
@@ -45,6 +46,7 @@ const DEFAULT_ADMIN_LIST_PREFS: AdminListResourcePrefs = {
   filterAgentStatus: 'all',
   filterDeviceKind: 'all',
   filterDeviceAgentId: 'all',
+  filterAlertAgentId: 'all',
 }
 
 function parseStore(raw: string | null): Partial<Record<AdminResourceKey, Partial<AdminListResourcePrefs>>> {

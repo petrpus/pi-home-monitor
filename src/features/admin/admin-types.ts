@@ -25,11 +25,30 @@ export const listQuerySchema = z.object({
       deviceKind: z.enum(['NETWORK', 'BLUETOOTH', 'BLE', 'UNKNOWN', 'all']).optional(),
       /** Devices that have at least one observation from this agent */
       deviceAgentId: z.string().min(1).optional(),
+      /** Alerts tied to this agent (when set, `agentId` on alert must match) */
+      alertAgentId: z.string().min(1).optional(),
+      /** Raw reports for this agent only */
+      rawReportAgentId: z.string().min(1).optional(),
+      /** Only reports that have at least one unresolved alert */
+      rawReportHasUnresolvedAlerts: z.boolean().optional(),
     })
     .optional(),
 })
 
 export type ListQuery = z.infer<typeof listQuerySchema>
+
+/** Inline admin table on other pages (e.g. dashboard); merges into list `filters`. */
+export type AdminListEmbedOptions = {
+  forcedFilters: NonNullable<ListQuery['filters']>
+  listSectionTitle: string
+  listSectionDescription?: string
+}
+
+/** Optional URL search on `/admin/$resource` (e.g. deep-link from dashboard). */
+export type AdminListUrlSearchDefaults = {
+  agentId?: string
+  resolved?: 'all' | 'yes' | 'no'
+}
 
 export const mutateBodySchema = z.discriminatedUnion('operation', [
   z.object({

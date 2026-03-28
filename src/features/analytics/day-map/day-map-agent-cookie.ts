@@ -1,3 +1,4 @@
+/** Preferred agent for mapa dne, přehled (dashboard) a související pohledy. */
 const COOKIE_NAME = 'phm_day_map_agent_id'
 const MAX_AGE_SEC = 365 * 24 * 60 * 60
 

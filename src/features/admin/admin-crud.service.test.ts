@@ -150,6 +150,47 @@ describe('adminList', () => {
     vi.clearAllMocks()
   })
 
+  it('filters alerts by alertAgentId', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ alert: { findMany, count } })
+
+    await adminList({
+      resource: 'alerts',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+      filters: { alertAgentId: 'agent-z' },
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { agentId: 'agent-z' },
+      }),
+    )
+    expect(count).toHaveBeenCalledWith({ where: { agentId: 'agent-z' } })
+  })
+
+  it('combines alertAgentId and isResolved no for alerts', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ alert: { findMany, count } })
+
+    await adminList({
+      resource: 'alerts',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+      filters: { alertAgentId: 'ag1', isResolved: 'no' },
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { agentId: 'ag1', isResolved: false },
+      }),
+    )
+  })
+
   it('applies isResolved yes filter for alerts', async () => {
     const findMany = vi.fn().mockResolvedValue([])
     const count = vi.fn().mockResolvedValue(0)
@@ -417,6 +458,32 @@ describe('adminList', () => {
         nameUserSet: false,
       },
     })
+  })
+
+  it('filters rawReports by agent and unresolved alerts', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ rawReport: { findMany, count } })
+
+    await adminList({
+      resource: 'rawReports',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+      filters: {
+        rawReportAgentId: 'ag1',
+        rawReportHasUnresolvedAlerts: true,
+      },
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          agentId: 'ag1',
+          alerts: { some: { isResolved: false } },
+        }),
+      }),
+    )
   })
 
   it('maps rawReports rows with agentName and deviceCount', async () => {

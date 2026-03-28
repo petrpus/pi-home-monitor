@@ -119,6 +119,9 @@ export async function adminList(q: ListQuery): Promise<{
   switch (q.resource) {
     case 'alerts': {
       const where: Prisma.AlertWhereInput = {}
+      if (q.filters?.alertAgentId) {
+        where.agentId = q.filters.alertAgentId
+      }
       if (q.filters?.isResolved === 'yes') where.isResolved = true
       if (q.filters?.isResolved === 'no') where.isResolved = false
       const term = q.search?.trim()
@@ -266,6 +269,12 @@ export async function adminList(q: ListQuery): Promise<{
     }
     case 'rawReports': {
       const where: Prisma.RawReportWhereInput = {}
+      if (q.filters?.rawReportAgentId) {
+        where.agentId = q.filters.rawReportAgentId
+      }
+      if (q.filters?.rawReportHasUnresolvedAlerts === true) {
+        where.alerts = { some: { isResolved: false } }
+      }
       const term = q.search?.trim()
       if (term) {
         where.OR = [

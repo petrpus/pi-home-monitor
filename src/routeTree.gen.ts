@@ -14,11 +14,9 @@ import { Route as HealthRouteImport } from './routes/health'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as DevAddAgentRouteImport } from './routes/dev.add-agent'
 import { Route as ApiIngestRouteImport } from './routes/api.ingest'
 import { Route as AnalyticsSectionRouteImport } from './routes/analytics.$section'
 import { Route as AdminResourceRouteImport } from './routes/admin.$resource'
-import { Route as ApiDevAgentsRouteImport } from './routes/api.dev.agents'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -45,11 +43,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DevAddAgentRoute = DevAddAgentRouteImport.update({
-  id: '/dev/add-agent',
-  path: '/dev/add-agent',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiIngestRoute = ApiIngestRouteImport.update({
   id: '/api/ingest',
   path: '/api/ingest',
@@ -65,11 +58,6 @@ const AdminResourceRoute = AdminResourceRouteImport.update({
   path: '/admin/$resource',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiDevAgentsRoute = ApiDevAgentsRouteImport.update({
-  id: '/api/dev/agents',
-  path: '/api/dev/agents',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -79,9 +67,7 @@ export interface FileRoutesByFullPath {
   '/admin/$resource': typeof AdminResourceRoute
   '/analytics/$section': typeof AnalyticsSectionRoute
   '/api/ingest': typeof ApiIngestRoute
-  '/dev/add-agent': typeof DevAddAgentRoute
   '/admin/': typeof AdminIndexRoute
-  '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,9 +77,7 @@ export interface FileRoutesByTo {
   '/admin/$resource': typeof AdminResourceRoute
   '/analytics/$section': typeof AnalyticsSectionRoute
   '/api/ingest': typeof ApiIngestRoute
-  '/dev/add-agent': typeof DevAddAgentRoute
   '/admin': typeof AdminIndexRoute
-  '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,9 +88,7 @@ export interface FileRoutesById {
   '/admin/$resource': typeof AdminResourceRoute
   '/analytics/$section': typeof AnalyticsSectionRoute
   '/api/ingest': typeof ApiIngestRoute
-  '/dev/add-agent': typeof DevAddAgentRoute
   '/admin/': typeof AdminIndexRoute
-  '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,9 +100,7 @@ export interface FileRouteTypes {
     | '/admin/$resource'
     | '/analytics/$section'
     | '/api/ingest'
-    | '/dev/add-agent'
     | '/admin/'
-    | '/api/dev/agents'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -130,9 +110,7 @@ export interface FileRouteTypes {
     | '/admin/$resource'
     | '/analytics/$section'
     | '/api/ingest'
-    | '/dev/add-agent'
     | '/admin'
-    | '/api/dev/agents'
   id:
     | '__root__'
     | '/'
@@ -142,9 +120,7 @@ export interface FileRouteTypes {
     | '/admin/$resource'
     | '/analytics/$section'
     | '/api/ingest'
-    | '/dev/add-agent'
     | '/admin/'
-    | '/api/dev/agents'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -154,9 +130,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   AdminResourceRoute: typeof AdminResourceRoute
   ApiIngestRoute: typeof ApiIngestRoute
-  DevAddAgentRoute: typeof DevAddAgentRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  ApiDevAgentsRoute: typeof ApiDevAgentsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -196,13 +170,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dev/add-agent': {
-      id: '/dev/add-agent'
-      path: '/dev/add-agent'
-      fullPath: '/dev/add-agent'
-      preLoaderRoute: typeof DevAddAgentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/ingest': {
       id: '/api/ingest'
       path: '/api/ingest'
@@ -222,13 +189,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/$resource'
       fullPath: '/admin/$resource'
       preLoaderRoute: typeof AdminResourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/dev/agents': {
-      id: '/api/dev/agents'
-      path: '/api/dev/agents'
-      fullPath: '/api/dev/agents'
-      preLoaderRoute: typeof ApiDevAgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -253,9 +213,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   AdminResourceRoute: AdminResourceRoute,
   ApiIngestRoute: ApiIngestRoute,
-  DevAddAgentRoute: DevAddAgentRoute,
   AdminIndexRoute: AdminIndexRoute,
-  ApiDevAgentsRoute: ApiDevAgentsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

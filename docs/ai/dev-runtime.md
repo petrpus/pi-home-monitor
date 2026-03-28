@@ -30,6 +30,10 @@ docker compose up -d postgres
 
   `postgresql://postgres:postgres@localhost:5432/pi_monitoring?schema=public`
 
+- **Where it is read:** `getPrismaClient()` in [`src/lib/prismaDb.ts`](../../src/lib/prismaDb.ts) uses `process.env.DATABASE_URL` only (no `dotenv` import in that module).
+- **Repo-root `.env`:** [`prisma.config.ts`](../../prisma.config.ts) and [`prisma/seed.ts`](../../prisma/seed.ts) import `dotenv/config`, so Prisma CLI and seed load variables from the repository root. **`bun run …`** also loads `.env` from the project when Bun starts the process.
+- **Local footgun:** If **`DATABASE_URL` is already set in your shell**, Bun’s default env behavior keeps that value and does **not** replace it with `.env`—you may hit a different database than the file suggests. Unset the variable or align shell and `.env` before running dev, migrations, or tests.
+
 ## Seed dev agent
 
 After migrate:

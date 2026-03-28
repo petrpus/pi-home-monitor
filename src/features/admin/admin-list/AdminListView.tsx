@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Eye,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -46,6 +47,9 @@ import type { AdminResourceKey, MutateBody } from "#/features/admin/admin-types"
 import { adminColumnLabel } from "#/features/admin/admin-list/admin-column-labels"
 import { ADMIN_DELETE_ONLY, READ_ONLY, formatCell, pickColumns } from "#/features/admin/admin-list/constants"
 import { AgentLiveStatusCell } from "#/features/admin/admin-list/AgentLiveStatusCell"
+import { DeviceDetailDialog } from "#/features/admin/admin-list/DeviceDetailDialog"
+import { DeviceKindCell } from "#/features/admin/admin-list/DeviceKindCell"
+import { DeviceNameEditDialog } from "#/features/admin/admin-list/DeviceNameEditDialog"
 import { EntityFormDialog } from "#/features/admin/admin-list/EntityFormDialog"
 import { cn } from "#/lib/utils"
 
@@ -80,6 +84,8 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkOpen, setBulkOpen] = useState(false)
   const [editRow, setEditRow] = useState<Record<string, unknown> | null>(null)
+  const [deviceNameEditRow, setDeviceNameEditRow] = useState<Record<string, unknown> | null>(null)
+  const [deviceDetailRow, setDeviceDetailRow] = useState<Record<string, unknown> | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const listFn = useServerFn(adminListFn)
   const mutateFn = useServerFn(adminMutateFn)
@@ -460,11 +466,17 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
                             key={c}
                             className={cn(
                               "max-w-[240px] truncate text-xs",
-                              resource === "agents" && c === "status" ? "font-sans" : "font-mono",
+                              resource === "agents" && c === "status"
+                                ? "font-sans"
+                                : resource === "devices" && c === "kind"
+                                  ? "font-sans"
+                                  : "font-mono",
                             )}
                           >
                             {resource === "agents" && c === "status" ? (
                               <AgentLiveStatusCell row={rec} />
+                            ) : resource === "devices" && c === "kind" ? (
+                              <DeviceKindCell kind={rec.kind} />
                             ) : (
                               formatCell(rec[c], c)
                             )}
@@ -475,7 +487,22 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                {showCreateEdit ? (
+                                {resource === "devices" ? (
+                                  <DropdownMenuItem className="gap-2" onClick={() => setDeviceDetailRow(rec)}>
+                                    <Eye className="h-4 w-4" />
+                                    Zobrazit detail
+                                  </DropdownMenuItem>
+                                ) : null}
+                                {showCreateEdit && resource === "devices" ? (
+                                  <DropdownMenuItem
+                                    className="gap-2"
+                                    onClick={() => setDeviceNameEditRow(rec)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                    Upravit název
+                                  </DropdownMenuItem>
+                                ) : null}
+                                {showCreateEdit && resource !== "devices" ? (
                                   <DropdownMenuItem className="gap-2" onClick={() => setEditRow(rec)}><Pencil className="h-4 w-4" />Upravit</DropdownMenuItem>
                                 ) : null}
                                 {resource === "alerts" && rec.isResolved !== true ? (
@@ -546,6 +573,31 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
       ) : null}
       {showCreateEdit ? (
         <EntityFormDialog open={Boolean(editRow)} onOpenChange={(o) => !o && setEditRow(null)} mode="update" resource={resource} row={editRow} onSubmit={(payload) => { if (!editRow?.id) return; void mutate.mutateAsync({ operation: "update", resource, id: String(editRow.id), payload, clientOperationId: crypto.randomUUID() }); setEditRow(null) }} />
+      ) : null}
+      {resource === "devices" ? (
+        <DeviceDetailDialog
+          open={Boolean(deviceDetailRow)}
+          onOpenChange={(o) => !o && setDeviceDetailRow(null)}
+          row={deviceDetailRow}
+        />
+      ) : null}
+      {showCreateEdit && resource === "devices" ? (
+        <DeviceNameEditDialog
+          open={Boolean(deviceNameEditRow)}
+          onOpenChange={(o) => !o && setDeviceNameEditRow(null)}
+          row={deviceNameEditRow}
+          onSave={(payload) => {
+            if (!deviceNameEditRow?.id) return
+            void mutate.mutateAsync({
+              operation: "update",
+              resource: "devices",
+              id: String(deviceNameEditRow.id),
+              payload,
+              clientOperationId: crypto.randomUUID(),
+            })
+            setDeviceNameEditRow(null)
+          }}
+        />
       ) : null}
     </DashboardShell>
   )

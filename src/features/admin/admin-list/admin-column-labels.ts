@@ -22,7 +22,10 @@ const LABELS: Record<string, string> = {
   // Devices
   kind: "Druh",
   primaryMac: "Hlavní MAC",
-  normalizedName: "Normalizovaný název",
+  lastIpAddress: "Posl. IP",
+  lastRssi: "Posl. RSSI",
+  normalizedName: "Název",
+  nameUserSet: "Název od uživatele",
   vendor: "Výrobce",
   firstSeenAt: "Poprvé viděno",
 

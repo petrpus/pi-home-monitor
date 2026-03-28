@@ -175,12 +175,21 @@ export async function adminList(q: ListQuery): Promise<{
           { primaryMac: { contains: term, mode: 'insensitive' } },
           { normalizedName: { contains: term, mode: 'insensitive' } },
           { vendor: { contains: term, mode: 'insensitive' } },
+          { lastIpAddress: { contains: term, mode: 'insensitive' } },
         ]
       }
       const orderBy = buildOrderBy(
         q.sortBy,
         q.sortDir,
-        ['createdAt', 'lastSeenAt', 'kind', 'primaryMac', 'normalizedName'] as const,
+        [
+          'createdAt',
+          'lastSeenAt',
+          'kind',
+          'primaryMac',
+          'lastIpAddress',
+          'lastRssi',
+          'normalizedName',
+        ] as const,
         'lastSeenAt',
         'desc',
       )
@@ -189,9 +198,14 @@ export async function adminList(q: ListQuery): Promise<{
         kind: true,
         primaryMac: true,
         normalizedName: true,
+        nameUserSet: true,
         vendor: true,
+        lastIpAddress: true,
+        lastRssi: true,
         firstSeenAt: true,
         lastSeenAt: true,
+        createdAt: true,
+        updatedAt: true,
       } satisfies Prisma.DeviceSelect
       const [rows, total] = await Promise.all([
         prisma.device.findMany({ where, orderBy, skip, take, select: deviceSelect }),
@@ -274,6 +288,8 @@ const deviceCreateSchema = z.object({
   primaryMac: z.string().min(1).max(64),
   normalizedName: z.string().max(500).optional().nullable(),
   vendor: z.string().max(500).optional().nullable(),
+  lastIpAddress: z.string().max(64).optional().nullable(),
+  lastRssi: z.number().int().min(-200).max(50).optional().nullable(),
 })
 
 const deviceUpdateSchema = z.object({
@@ -350,12 +366,17 @@ export async function adminMutate(
             return { error: 'validation', detail: parsed.error.message }
           }
           const now = new Date()
+          const trimmedName = parsed.data.normalizedName?.trim()
+          const trimmedIp = parsed.data.lastIpAddress?.trim()
           const row = await prisma.device.create({
             data: {
               kind: parsed.data.kind,
               primaryMac: parsed.data.primaryMac,
-              normalizedName: parsed.data.normalizedName ?? null,
+              normalizedName: trimmedName && trimmedName.length > 0 ? trimmedName : null,
+              nameUserSet: Boolean(trimmedName && trimmedName.length > 0),
               vendor: parsed.data.vendor ?? null,
+              lastIpAddress: trimmedIp && trimmedIp.length > 0 ? trimmedIp : null,
+              lastRssi: parsed.data.lastRssi ?? null,
               firstSeenAt: now,
               lastSeenAt: now,
             },
@@ -407,9 +428,18 @@ export async function adminMutate(
           if (!parsed.success) {
             return { error: 'validation', detail: parsed.error.message }
           }
+          const data: Prisma.DeviceUpdateInput = {}
+          if (parsed.data.vendor !== undefined) {
+            data.vendor = parsed.data.vendor
+          }
+          if (parsed.data.normalizedName !== undefined) {
+            const trimmed = parsed.data.normalizedName?.trim()
+            data.normalizedName = trimmed && trimmed.length > 0 ? trimmed : null
+            data.nameUserSet = Boolean(trimmed && trimmed.length > 0)
+          }
           const row = await prisma.device.update({
             where: { id: body.id },
-            data: parsed.data,
+            data,
           })
           return { result: row }
         }

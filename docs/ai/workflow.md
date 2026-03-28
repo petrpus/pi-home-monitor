@@ -12,6 +12,8 @@ bun install
 cp .env.example .env   # if needed; set DATABASE_URL
 ```
 
+See **dev-runtime.md** for how `DATABASE_URL` is resolved locally (repo `.env` vs shell).
+
 ## Database
 
 ```bash

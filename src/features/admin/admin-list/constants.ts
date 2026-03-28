@@ -58,6 +58,8 @@ function tryParseCellDateTime(v: unknown, columnKey: string): Date | null {
 export function formatCell(v: unknown, columnKey?: string): string {
   if (v === null || v === undefined) return "—"
   if (columnKey === "isResolved" && typeof v === "boolean") return v ? "ANO" : "NE"
+  if (columnKey === "nameUserSet" && typeof v === "boolean") return v ? "ANO" : "NE"
+  if (columnKey === "lastRssi" && typeof v === "number") return `${v} dBm`
   if (columnKey) {
     const asDate = tryParseCellDateTime(v, columnKey)
     if (asDate) return formatCzechDateTime(asDate)
@@ -67,8 +69,21 @@ export function formatCell(v: unknown, columnKey?: string): string {
   return String(v)
 }
 
+const DEVICE_TABLE_COLUMNS = [
+  "normalizedName",
+  "kind",
+  "primaryMac",
+  "lastIpAddress",
+  "lastRssi",
+  "vendor",
+] as const
+
 export function pickColumns(rows: object[], resource?: AdminResourceKey): string[] {
   if (!rows.length) return []
+  if (resource === "devices") {
+    const keys = new Set(Object.keys(rows[0]).filter((k) => k !== "id"))
+    return DEVICE_TABLE_COLUMNS.filter((k) => keys.has(k))
+  }
   let keys = Object.keys(rows[0]).filter((k) => k !== "id")
   if (resource === "agents") {
     keys = keys.filter((k) => k !== "createdAt" && k !== "updatedAt")
@@ -81,7 +96,11 @@ export function pickColumns(rows: object[], resource?: AdminResourceKey): string
     "type",
     "severity",
     "status",
+    "normalizedName",
     "kind",
+    "primaryMac",
+    "lastIpAddress",
+    "lastRssi",
     "isResolved",
     "message",
     "createdAt",

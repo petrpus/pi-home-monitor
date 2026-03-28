@@ -25,20 +25,29 @@ type TransactionDb = {
   device: {
     findUnique: (args: {
       where: { kind_primaryMac: { kind: DeviceKind; primaryMac: string } }
-    }) => Promise<{ id: string } | null>
+      select: { id: true; nameUserSet: true }
+    }) => Promise<{ id: string; nameUserSet: boolean } | null>
     create: (args: {
       data: {
         kind: DeviceKind
         primaryMac: string
         normalizedName?: string
         vendor?: string
+        lastIpAddress?: string | null
+        lastRssi?: number | null
         firstSeenAt: Date
         lastSeenAt: Date
       }
     }) => Promise<{ id: string }>
     update: (args: {
       where: { id: string }
-      data: { normalizedName?: string; vendor?: string; lastSeenAt: Date }
+      data: {
+        normalizedName?: string | null
+        vendor?: string
+        lastSeenAt: Date
+        lastIpAddress?: string
+        lastRssi?: number
+      }
     }) => Promise<{ id: string }>
   }
   observation: {
@@ -173,15 +182,27 @@ export async function ingestAgentReport(
             primaryMac: macAddress,
           },
         },
+        select: { id: true, nameUserSet: true },
       })
+
+      const connectivity: { lastIpAddress?: string; lastRssi?: number } = {}
+      if (inputDevice.source === 'network' && inputDevice.ipAddress) {
+        connectivity.lastIpAddress = inputDevice.ipAddress
+      }
+      if (inputDevice.source === 'bluetooth' && typeof inputDevice.rssi === 'number') {
+        connectivity.lastRssi = inputDevice.rssi
+      }
 
       const device = existingDevice
         ? await tx.device.update({
             where: { id: existingDevice.id },
             data: {
-              normalizedName: inputDevice.name,
+              ...(existingDevice.nameUserSet
+                ? {}
+                : { normalizedName: inputDevice.name }),
               vendor: inputDevice.vendor,
               lastSeenAt: observedAt,
+              ...connectivity,
             },
           })
         : await tx.device.create({
@@ -190,6 +211,14 @@ export async function ingestAgentReport(
               primaryMac: macAddress,
               normalizedName: inputDevice.name,
               vendor: inputDevice.vendor,
+              lastIpAddress:
+                inputDevice.source === 'network' && inputDevice.ipAddress
+                  ? inputDevice.ipAddress
+                  : null,
+              lastRssi:
+                inputDevice.source === 'bluetooth' && typeof inputDevice.rssi === 'number'
+                  ? inputDevice.rssi
+                  : null,
               firstSeenAt: observedAt,
               lastSeenAt: observedAt,
             },

@@ -70,7 +70,13 @@ model Device {
   kind           DeviceKind
   primaryMac     String?
   normalizedName String?
+  /// When true, ingest must not overwrite `normalizedName` from the agent payload.
+  nameUserSet    Boolean     @default(false)
   vendor         String?
+  /// Last IPv4/IPv6 seen on a network scan (not cleared when a report omits IP).
+  lastIpAddress  String?
+  /// Last RSSI in dBm from a Bluetooth/BLE scan.
+  lastRssi       Int?
   firstSeenAt    DateTime
   lastSeenAt     DateTime
   createdAt      DateTime    @default(now())

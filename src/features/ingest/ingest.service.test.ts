@@ -22,7 +22,10 @@ describe('toNormalizedDevices', () => {
 
 describe('ingestAgentReport', () => {
   it('creates raw report, devices, observations and alerts', async () => {
-    const devicesByUnique = new Map<string, { id: string; kind: DeviceKind; primaryMac: string }>()
+    const devicesByUnique = new Map<
+      string,
+      { id: string; kind: DeviceKind; primaryMac: string; nameUserSet: boolean }
+    >()
     const observationCreates: Array<{ rawReportId: string; deviceId: string }> = []
     const alertCreates: Array<{ deviceId: string; rawReportId: string }> = []
     const agentUpdates: Array<{ id: string }> = []
@@ -52,6 +55,7 @@ describe('ingestAgentReport', () => {
             id: `device-${devicesByUnique.size + 1}`,
             kind: data.kind,
             primaryMac: data.primaryMac,
+            nameUserSet: false,
           }
           devicesByUnique.set(`${data.kind}:${data.primaryMac}`, device)
           return device
@@ -119,8 +123,19 @@ describe('ingestAgentReport', () => {
 
   it('updates an existing device and does not create new-device alert', async () => {
     const existingKey = `${DeviceKind.NETWORK}:AA:BB:CC:DD:EE:FF`
-    const devicesByUnique = new Map<string, { id: string; kind: DeviceKind; primaryMac: string }>([
-      [existingKey, { id: 'device-existing', kind: DeviceKind.NETWORK, primaryMac: 'AA:BB:CC:DD:EE:FF' }],
+    const devicesByUnique = new Map<
+      string,
+      { id: string; kind: DeviceKind; primaryMac: string; nameUserSet: boolean }
+    >([
+      [
+        existingKey,
+        {
+          id: 'device-existing',
+          kind: DeviceKind.NETWORK,
+          primaryMac: 'AA:BB:CC:DD:EE:FF',
+          nameUserSet: false,
+        },
+      ],
     ])
     let alertCalls = 0
 
@@ -168,6 +183,72 @@ describe('ingestAgentReport', () => {
     expect(result.processed.devicesUpdated).toBe(1)
     expect(result.processed.alertsCreated).toBe(0)
     expect(alertCalls).toBe(0)
+  })
+
+  it('does not overwrite normalizedName when nameUserSet is true', async () => {
+    const existingKey = `${DeviceKind.NETWORK}:AA:BB:CC:DD:EE:FF`
+    let lastUpdateData: Record<string, unknown> | null = null
+    const devicesByUnique = new Map<
+      string,
+      { id: string; kind: DeviceKind; primaryMac: string; nameUserSet: boolean }
+    >([
+      [
+        existingKey,
+        {
+          id: 'device-existing',
+          kind: DeviceKind.NETWORK,
+          primaryMac: 'AA:BB:CC:DD:EE:FF',
+          nameUserSet: true,
+        },
+      ],
+    ])
+
+    const tx = {
+      rawReport: { create: async () => ({ id: 'raw-1' }) },
+      device: {
+        findUnique: async ({
+          where,
+        }: {
+          where: { kind_primaryMac: { kind: DeviceKind; primaryMac: string } }
+        }) => devicesByUnique.get(`${where.kind_primaryMac.kind}:${where.kind_primaryMac.primaryMac}`) ?? null,
+        create: async () => {
+          throw new Error('should not create a new device')
+        },
+        update: async ({ data }: { data: Record<string, unknown> }) => {
+          lastUpdateData = data
+          return { id: 'device-existing' }
+        },
+      },
+      observation: { create: async () => ({ id: 'obs-1' }) },
+      agent: { update: async () => ({}) },
+      alert: {
+        create: async () => {
+          throw new Error('should not create alert')
+        },
+      },
+    }
+
+    const db = {
+      $transaction: async <T>(fn: (trx: typeof tx) => Promise<T>) => fn(tx),
+    }
+
+    await ingestAgentReport(
+      {
+        agentId: 'agent-1',
+        payload: {
+          reportedAt: '2026-03-27T10:00:00.000Z',
+          payloadVersion: '1',
+          networkDevices: [{ macAddress: 'AA:BB:CC:DD:EE:FF', name: 'Agent name should be ignored' }],
+          bluetoothDevices: [],
+        },
+      },
+      db,
+    )
+
+    expect(lastUpdateData).not.toBeNull()
+    const payload = lastUpdateData as NonNullable<typeof lastUpdateData>
+    expect(Object.prototype.hasOwnProperty.call(payload, 'normalizedName')).toBe(false)
+    expect(payload['lastSeenAt']).toBeInstanceOf(Date)
   })
 
   it('propagates transaction failures', async () => {

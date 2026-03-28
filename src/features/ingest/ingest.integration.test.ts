@@ -128,6 +128,8 @@ describeIf('ingest integration', () => {
 
     expect(networkDevice).not.toBeNull()
     expect(bleDevice).not.toBeNull()
+    expect(networkDevice?.lastIpAddress).toBe('192.168.1.20')
+    expect(bleDevice?.lastRssi).toBe(-55)
 
     const newDeviceAlerts = await prisma.alert.findMany({
       where: { rawReportId: body.rawReportId, type: 'NEW_DEVICE' },

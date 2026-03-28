@@ -24,7 +24,7 @@ describe('ingestAgentReport', () => {
   it('creates raw report, devices, observations and alerts', async () => {
     const devicesByUnique = new Map<string, { id: string; kind: DeviceKind; primaryMac: string }>()
     const observationCreates: Array<{ rawReportId: string; deviceId: string }> = []
-    const alertCreates: Array<{ deviceId: string }> = []
+    const alertCreates: Array<{ deviceId: string; rawReportId: string }> = []
     const agentUpdates: Array<{ id: string }> = []
 
     const tx = {
@@ -79,8 +79,8 @@ describe('ingestAgentReport', () => {
         },
       },
       alert: {
-        create: async ({ data }: { data: { deviceId: string } }) => {
-          alertCreates.push({ deviceId: data.deviceId })
+        create: async ({ data }: { data: { deviceId: string; rawReportId: string } }) => {
+          alertCreates.push({ deviceId: data.deviceId, rawReportId: data.rawReportId })
           return {} as { id: string }
         },
       },
@@ -112,6 +112,7 @@ describe('ingestAgentReport', () => {
     expect(result.processed.observationsCreated).toBe(2)
     expect(result.processed.skipped).toBe(1)
     expect(alertCreates).toHaveLength(2)
+    expect(alertCreates.every((a) => a.rawReportId === 'raw-1')).toBe(true)
     expect(observationCreates).toHaveLength(2)
     expect(agentUpdates).toEqual([{ id: 'agent-1' }])
   })

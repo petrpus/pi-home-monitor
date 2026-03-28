@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { DeviceKind } from '../../../generated/prisma/client'
 import { hashApiKey } from '#/features/agents/agent-auth.server'
 import { handleIngestPost } from './ingest.route-handler'
-import { getPrismaClient } from '#/lib/prisma.server'
+import { getPrismaClient } from '#/lib/prismaDb'
 
 const runIntegration = process.env.RUN_INTEGRATION === '1'
 const describeIf = runIntegration ? describe : describe.skip
@@ -21,6 +21,7 @@ describeIf('ingest integration', () => {
       where: { id: TEST_AGENT_ID },
       update: {
         name: 'Integration Test Agent',
+        status: 'ONLINE',
         apiKeyHash: hashApiKey(TEST_API_KEY),
       },
       create: {
@@ -127,5 +128,11 @@ describeIf('ingest integration', () => {
 
     expect(networkDevice).not.toBeNull()
     expect(bleDevice).not.toBeNull()
+
+    const newDeviceAlerts = await prisma.alert.findMany({
+      where: { rawReportId: body.rawReportId, type: 'NEW_DEVICE' },
+    })
+    expect(newDeviceAlerts).toHaveLength(2)
+    expect(newDeviceAlerts.every((a) => a.rawReportId === body.rawReportId)).toBe(true)
   })
 })

@@ -1,9 +1,10 @@
 import {
+  AgentStatus,
   AlertSeverity,
   AlertType,
   DeviceKind,
 } from '../../../generated/prisma/client'
-import { getPrismaClient } from '#/lib/prisma.server'
+import { getPrismaClient } from '#/lib/prismaDb'
 import {
   type IngestRequestInput,
   normalizeBluetoothKind,
@@ -57,7 +58,10 @@ type TransactionDb = {
     }) => Promise<{ id: string }>
   }
   agent: {
-    update: (args: { where: { id: string }; data: { lastSeenAt: Date } }) => Promise<unknown>
+    update: (args: {
+      where: { id: string }
+      data: { lastSeenAt: Date; status: typeof AgentStatus.ONLINE }
+    }) => Promise<unknown>
   }
   alert: {
     create: (args: {
@@ -68,6 +72,7 @@ type TransactionDb = {
         message: string
         agentId: string
         deviceId: string
+        rawReportId: string
       }
     }) => Promise<{ id: string }>
   }
@@ -202,6 +207,7 @@ export async function ingestAgentReport(
             message: `New ${inputDevice.kind.toLowerCase()} device ${macAddress} seen by agent ${args.agentId}.`,
             agentId: args.agentId,
             deviceId: device.id,
+            rawReportId: rawReport.id,
           },
         })
         alertsCreated += 1
@@ -228,7 +234,7 @@ export async function ingestAgentReport(
 
     await tx.agent.update({
       where: { id: args.agentId },
-      data: { lastSeenAt: observedAt },
+      data: { lastSeenAt: observedAt, status: AgentStatus.ONLINE },
     })
 
     return {

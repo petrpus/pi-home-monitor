@@ -1,4 +1,4 @@
-import { getPrismaClient } from '#/lib/prisma.server'
+import { getPrismaClient } from '#/lib/prismaDb'
 import { hashApiKey } from '#/features/agents/agent-auth.server'
 import { DEV_ADD_AGENT_PATH } from '#/features/agents/dev-register-agent.paths'
 import { devRegisterAgentFormSchema } from '#/features/agents/dev-register-agent.schema'

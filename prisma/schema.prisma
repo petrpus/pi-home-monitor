@@ -59,6 +59,7 @@ model RawReport {
 
   agent          Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
   observations   Observation[]
+  alerts         Alert[]
 
   @@index([agentId, receivedAt])
   @@index([reportedAt])
@@ -118,12 +119,15 @@ model Alert {
   createdAt  DateTime      @default(now())
   resolvedAt DateTime?
 
-  agentId    String?
-  deviceId   String?
+  agentId     String?
+  deviceId    String?
+  rawReportId String?
 
   agent      Agent?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
   device     Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  rawReport  RawReport?    @relation(fields: [rawReportId], references: [id], onDelete: Cascade)
 
   @@index([type, createdAt])
   @@index([isResolved, createdAt])
+  @@index([rawReportId])
 }

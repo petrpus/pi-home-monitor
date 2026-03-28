@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import { AgentStatus, type Agent } from '../../../generated/prisma/client'
-import { getPrismaClient } from '#/lib/prisma.server'
+import { getPrismaClient } from '#/lib/prismaDb'
 
 type AgentAuthDb = {
   agent: {

@@ -24,6 +24,7 @@ zerops:
         - generated
         - package.json
         - node_modules
+        - server.ts
 
       # *optional*: which files / folders
       # to cache for the next build run
@@ -52,5 +53,5 @@ zerops:
         - port: 3000
           httpSupport: true
 
-      # TanStack Start production server (see dist after `bun run build`)
-      start: bun dist/server/server.js
+      # TanStack SSR + static assets from dist/client (/assets/*, favicon, etc.)
+      start: bun ./server.ts

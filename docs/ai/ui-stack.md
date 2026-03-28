@@ -8,17 +8,17 @@
 - **Tailwind CSS v4** with Vite plugin `@tailwindcss/vite`
 - **lucide-react** for icons where used
 
-## Not in this repo (yet)
+## Data fetching
 
-- **React Hook Form** — not a dependency today; forms are minimal. If added for complex flows, document here.
-- **TanStack Query** — optional for future data fetching; loaders/server functions are the TanStack Start defaults.
+- **TanStack Query** — admin tables and dashboard stats (`@tanstack/react-query`).
+- **React Hook Form** — not used yet; admin entity forms use JSON textarea + server Zod validation.
 
 ## File layout
 
 | Area | Path |
 | --- | --- |
-| Routes | `src/routes/` (`__root.tsx`, `index.tsx`, `about.tsx`, `health.ts`, `api.ingest.ts`, …) |
-| Shared components | `src/components/` (`Header`, `Footer`, `ThemeToggle`) |
+| Routes | `src/routes/` (`__root.tsx`, `index.tsx`, `login.tsx`, `analytics*`, `admin*`, `health.ts`, `api.ingest.ts`, …) |
+| Shared components | `src/components/` (`dashboard-shell`, `ThemeToggle`, `ui/*`) |
 | Global CSS + tokens | `src/styles.css` |
 | App bootstrap | `src/main.tsx`, `src/router.tsx` |
 
@@ -34,3 +34,11 @@
 ## SSR note
 
 - Public pages render through TanStack Start SSR; keep heavy browser-only APIs inside `useEffect` or client-only branches.
+
+
+## Admin dashboard (current)
+
+- **UI:** Czech copy; **routes** in English (`/login`, `/analytics`, `/admin/...`). Shell: `src/components/dashboard-shell.tsx`, providers in `src/components/app-providers.tsx`.
+- **Components:** Shadcn-style primitives under `src/components/ui/` (Button, Card, Table, Dialog, etc.) using tokens from `docs/ai/design-system.md` + CSS variables in `src/styles.css`.
+- **Data:** `@tanstack/react-query`, `sonner` toasts; server mutations via `createServerFn` (`adminAuthFns.ts`, `adminApiFns.ts`).
+- **Extending admin entities:** see [admin-crud-registry.md](./admin-crud-registry.md).

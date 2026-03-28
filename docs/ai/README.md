@@ -18,6 +18,7 @@ Use this folder as the **first** place to load project knowledge. Follow the rea
 | [design-system.md](./design-system.md) | Tokens, typography, theme |
 | [ui-stack.md](./ui-stack.md) | Frameworks and UI file layout |
 | [ui-patterns.md](./ui-patterns.md) | Reusable UI patterns |
+| [admin-crud-registry.md](./admin-crud-registry.md) | Extending admin CRUD / registry |
 | [SEPARATION.md](./SEPARATION.md) | What belongs here vs `.cursor/` vs `docs/` |
 
 ## Kit note

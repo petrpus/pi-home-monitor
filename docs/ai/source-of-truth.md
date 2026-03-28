@@ -28,7 +28,7 @@ Authoritative references for this repository. Prefer these over guessing from fi
 
 | Topic | Location |
 | --- | --- |
-| Prisma client singleton (adapter-pg, `DATABASE_URL`) | [src/lib/prisma.server.ts](../../src/lib/prisma.server.ts) |
+| Prisma client singleton (adapter-pg, `DATABASE_URL`) | [src/lib/prismaDb.ts](../../src/lib/prismaDb.ts) |
 | Ingest Zod schema + MAC normalization | [src/features/ingest/ingest.schema.ts](../../src/features/ingest/ingest.schema.ts) |
 | Ingest transaction + device/observation/alert logic | [src/features/ingest/ingest.service.ts](../../src/features/ingest/ingest.service.ts) |
 | Ingest HTTP handler (auth + validation) | [src/features/ingest/ingest.route-handler.ts](../../src/features/ingest/ingest.route-handler.ts) |

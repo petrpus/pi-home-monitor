@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DevAddAgentRouteImport } from './routes/dev.add-agent'
 import { Route as ApiIngestRouteImport } from './routes/api.ingest'
+import { Route as ApiDevAgentsRouteImport } from './routes/api.dev.agents'
 
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
@@ -29,9 +31,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevAddAgentRoute = DevAddAgentRouteImport.update({
+  id: '/dev/add-agent',
+  path: '/dev/add-agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIngestRoute = ApiIngestRouteImport.update({
   id: '/api/ingest',
   path: '/api/ingest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDevAgentsRoute = ApiDevAgentsRouteImport.update({
+  id: '/api/dev/agents',
+  path: '/api/dev/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -40,12 +52,16 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/health': typeof HealthRoute
   '/api/ingest': typeof ApiIngestRoute
+  '/dev/add-agent': typeof DevAddAgentRoute
+  '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/health': typeof HealthRoute
   '/api/ingest': typeof ApiIngestRoute
+  '/dev/add-agent': typeof DevAddAgentRoute
+  '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,34 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/health': typeof HealthRoute
   '/api/ingest': typeof ApiIngestRoute
+  '/dev/add-agent': typeof DevAddAgentRoute
+  '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/health' | '/api/ingest'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/health'
+    | '/api/ingest'
+    | '/dev/add-agent'
+    | '/api/dev/agents'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/health' | '/api/ingest'
-  id: '__root__' | '/' | '/about' | '/health' | '/api/ingest'
+  to:
+    | '/'
+    | '/about'
+    | '/health'
+    | '/api/ingest'
+    | '/dev/add-agent'
+    | '/api/dev/agents'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/health'
+    | '/api/ingest'
+    | '/dev/add-agent'
+    | '/api/dev/agents'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +104,8 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   HealthRoute: typeof HealthRoute
   ApiIngestRoute: typeof ApiIngestRoute
+  DevAddAgentRoute: typeof DevAddAgentRoute
+  ApiDevAgentsRoute: typeof ApiDevAgentsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,11 +131,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/add-agent': {
+      id: '/dev/add-agent'
+      path: '/dev/add-agent'
+      fullPath: '/dev/add-agent'
+      preLoaderRoute: typeof DevAddAgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ingest': {
       id: '/api/ingest'
       path: '/api/ingest'
       fullPath: '/api/ingest'
       preLoaderRoute: typeof ApiIngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/dev/agents': {
+      id: '/api/dev/agents'
+      path: '/api/dev/agents'
+      fullPath: '/api/dev/agents'
+      preLoaderRoute: typeof ApiDevAgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -107,6 +160,8 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   HealthRoute: HealthRoute,
   ApiIngestRoute: ApiIngestRoute,
+  DevAddAgentRoute: DevAddAgentRoute,
+  ApiDevAgentsRoute: ApiDevAgentsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

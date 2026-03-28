@@ -251,6 +251,158 @@ describe('ingestAgentReport', () => {
     expect(payload['lastSeenAt']).toBeInstanceOf(Date)
   })
 
+  it('persists lastIpAddress and null lastRssi when creating a network device with IP', async () => {
+    let createData: Record<string, unknown> | null = null
+    const tx = {
+      rawReport: { create: async () => ({ id: 'raw-1' }) },
+      device: {
+        findUnique: async () => null,
+        create: async ({ data }: { data: Record<string, unknown> }) => {
+          createData = data
+          return { id: 'dev-net' }
+        },
+        update: async () => {
+          throw new Error('unexpected update')
+        },
+      },
+      observation: { create: async () => ({ id: 'obs-1' }) },
+      agent: { update: async () => ({}) },
+      alert: { create: async () => ({ id: 'alert-1' }) },
+    }
+    const db = {
+      $transaction: async <T>(fn: (trx: typeof tx) => Promise<T>) => fn(tx),
+    }
+
+    await ingestAgentReport(
+      {
+        agentId: 'agent-1',
+        payload: {
+          reportedAt: '2026-03-27T10:00:00.000Z',
+          payloadVersion: '1',
+          networkDevices: [{ macAddress: 'aa:bb:cc:dd:ee:ff', ipAddress: '10.0.0.2' }],
+          bluetoothDevices: [],
+        },
+      },
+      db,
+    )
+
+    expect(createData).toMatchObject({
+      kind: DeviceKind.NETWORK,
+      primaryMac: 'AA:BB:CC:DD:EE:FF',
+      lastIpAddress: '10.0.0.2',
+      lastRssi: null,
+    })
+  })
+
+  it('persists lastRssi and null lastIpAddress when creating a BLE device with RSSI', async () => {
+    let createData: Record<string, unknown> | null = null
+    const tx = {
+      rawReport: { create: async () => ({ id: 'raw-1' }) },
+      device: {
+        findUnique: async () => null,
+        create: async ({ data }: { data: Record<string, unknown> }) => {
+          createData = data
+          return { id: 'dev-ble' }
+        },
+        update: async () => {
+          throw new Error('unexpected update')
+        },
+      },
+      observation: { create: async () => ({ id: 'obs-1' }) },
+      agent: { update: async () => ({}) },
+      alert: { create: async () => ({ id: 'alert-1' }) },
+    }
+    const db = {
+      $transaction: async <T>(fn: (trx: typeof tx) => Promise<T>) => fn(tx),
+    }
+
+    await ingestAgentReport(
+      {
+        agentId: 'agent-1',
+        payload: {
+          reportedAt: '2026-03-27T10:00:00.000Z',
+          payloadVersion: '1',
+          networkDevices: [],
+          bluetoothDevices: [{ macAddress: '11:22:33:44:55:66', kind: 'BLE', rssi: -58 }],
+        },
+      },
+      db,
+    )
+
+    expect(createData).toMatchObject({
+      kind: DeviceKind.BLE,
+      primaryMac: '11:22:33:44:55:66',
+      lastRssi: -58,
+      lastIpAddress: null,
+    })
+  })
+
+  it('includes lastIpAddress in update payload for existing network device', async () => {
+    const existingKey = `${DeviceKind.NETWORK}:AA:BB:CC:DD:EE:FF`
+    const devicesByUnique = new Map<
+      string,
+      { id: string; kind: DeviceKind; primaryMac: string; nameUserSet: boolean }
+    >([
+      [
+        existingKey,
+        {
+          id: 'device-existing',
+          kind: DeviceKind.NETWORK,
+          primaryMac: 'AA:BB:CC:DD:EE:FF',
+          nameUserSet: false,
+        },
+      ],
+    ])
+    let updateData: Record<string, unknown> | null = null
+
+    const tx = {
+      rawReport: { create: async () => ({ id: 'raw-1' }) },
+      device: {
+        findUnique: async ({
+          where,
+        }: {
+          where: { kind_primaryMac: { kind: DeviceKind; primaryMac: string } }
+        }) => devicesByUnique.get(`${where.kind_primaryMac.kind}:${where.kind_primaryMac.primaryMac}`) ?? null,
+        create: async () => {
+          throw new Error('unexpected create')
+        },
+        update: async ({ data }: { data: Record<string, unknown> }) => {
+          updateData = data
+          return { id: 'device-existing' }
+        },
+      },
+      observation: { create: async () => ({ id: 'obs-1' }) },
+      agent: { update: async () => ({}) },
+      alert: {
+        create: async () => {
+          throw new Error('should not create alert')
+        },
+      },
+    }
+
+    const db = {
+      $transaction: async <T>(fn: (trx: typeof tx) => Promise<T>) => fn(tx),
+    }
+
+    await ingestAgentReport(
+      {
+        agentId: 'agent-1',
+        payload: {
+          reportedAt: '2026-03-27T10:00:00.000Z',
+          payloadVersion: '1',
+          networkDevices: [{ macAddress: 'AA:BB:CC:DD:EE:FF', ipAddress: '192.168.8.1' }],
+          bluetoothDevices: [],
+        },
+      },
+      db,
+    )
+
+    expect(updateData).toMatchObject({
+      lastIpAddress: '192.168.8.1',
+      lastSeenAt: expect.any(Date),
+    })
+  })
+
   it('propagates transaction failures', async () => {
     const db = {
       $transaction: async <T>(fn: (tx: object) => Promise<T>) => {

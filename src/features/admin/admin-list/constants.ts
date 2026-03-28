@@ -69,7 +69,8 @@ export function formatCell(v: unknown, columnKey?: string): string {
   return String(v)
 }
 
-const DEVICE_TABLE_COLUMNS = [
+/** Visible device table columns (order); list API returns more fields for detail modal. */
+export const DEVICE_TABLE_COLUMNS = [
   "normalizedName",
   "kind",
   "primaryMac",

@@ -305,6 +305,108 @@ describe('adminList', () => {
     )
   })
 
+  it('lists devices with select including detail and snapshot fields', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const count = vi.fn().mockResolvedValue(0)
+    getPrismaClient.mockReturnValue({ device: { findMany, count } })
+
+    await adminList({
+      resource: 'devices',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+    })
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: {
+          id: true,
+          kind: true,
+          primaryMac: true,
+          normalizedName: true,
+          nameUserSet: true,
+          vendor: true,
+          lastIpAddress: true,
+          lastRssi: true,
+          firstSeenAt: true,
+          lastSeenAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+    )
+  })
+
+  it('returns device rows as returned by Prisma for the list', async () => {
+    const prismaRow = {
+      id: 'd1',
+      kind: DeviceKind.NETWORK,
+      primaryMac: 'AA:BB:CC:DD:EE:FF',
+      normalizedName: 'Printer',
+      nameUserSet: false,
+      vendor: 'Acme',
+      lastIpAddress: '192.168.1.10',
+      lastRssi: null,
+      firstSeenAt: new Date('2026-01-01T12:00:00.000Z'),
+      lastSeenAt: new Date('2026-01-02T12:00:00.000Z'),
+      createdAt: new Date('2026-01-01T10:00:00.000Z'),
+      updatedAt: new Date('2026-01-02T10:00:00.000Z'),
+    }
+    const findMany = vi.fn().mockResolvedValue([prismaRow])
+    const count = vi.fn().mockResolvedValue(1)
+    getPrismaClient.mockReturnValue({ device: { findMany, count } })
+
+    const out = await adminList({
+      resource: 'devices',
+      page: 1,
+      pageSize: 20,
+      sortDir: 'desc',
+    })
+
+    expect(out.rows).toEqual([prismaRow])
+    expect(out.total).toBe(1)
+  })
+
+  it('device update sets nameUserSet true when normalizedName is non-empty', async () => {
+    const update = vi.fn().mockResolvedValue({ id: 'd1' })
+    getPrismaClient.mockReturnValue({ device: { update } })
+
+    await adminMutate({
+      operation: 'update',
+      resource: 'devices',
+      id: 'd1',
+      payload: { normalizedName: 'Uživatelský název' },
+    })
+
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'd1' },
+      data: {
+        normalizedName: 'Uživatelský název',
+        nameUserSet: true,
+      },
+    })
+  })
+
+  it('device update clears name and nameUserSet when normalizedName empty', async () => {
+    const update = vi.fn().mockResolvedValue({ id: 'd1' })
+    getPrismaClient.mockReturnValue({ device: { update } })
+
+    await adminMutate({
+      operation: 'update',
+      resource: 'devices',
+      id: 'd1',
+      payload: { normalizedName: '   ' },
+    })
+
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'd1' },
+      data: {
+        normalizedName: null,
+        nameUserSet: false,
+      },
+    })
+  })
+
   it('maps rawReports rows with agentName and deviceCount', async () => {
     const findMany = vi.fn().mockResolvedValue([
       {

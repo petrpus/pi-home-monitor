@@ -46,6 +46,7 @@ zerops:
       # project-level secret DATABASE_URL in the GUI and remove this block.
       envVariables:
         DATABASE_URL: ${db_connectionString}
+        # Admin UI: set SESSION_SECRET (32+ chars) and ADMIN_PASSWORD in project secrets.
 
       # what ports your app listens on
       # and whether it supports http traffic

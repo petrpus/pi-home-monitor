@@ -9,26 +9,40 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as HealthRouteImport } from './routes/health'
-import { Route as AboutRouteImport } from './routes/about'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as DevAddAgentRouteImport } from './routes/dev.add-agent'
 import { Route as ApiIngestRouteImport } from './routes/api.ingest'
+import { Route as AnalyticsSectionRouteImport } from './routes/analytics.$section'
+import { Route as AdminResourceRouteImport } from './routes/admin.$resource'
 import { Route as ApiDevAgentsRouteImport } from './routes/api.dev.agents'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevAddAgentRoute = DevAddAgentRouteImport.update({
@@ -41,6 +55,16 @@ const ApiIngestRoute = ApiIngestRouteImport.update({
   path: '/api/ingest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalyticsSectionRoute = AnalyticsSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => AnalyticsRoute,
+} as any)
+const AdminResourceRoute = AdminResourceRouteImport.update({
+  id: '/admin/$resource',
+  path: '/admin/$resource',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDevAgentsRoute = ApiDevAgentsRouteImport.update({
   id: '/api/dev/agents',
   path: '/api/dev/agents',
@@ -49,67 +73,101 @@ const ApiDevAgentsRoute = ApiDevAgentsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
+  '/analytics': typeof AnalyticsRouteWithChildren
   '/health': typeof HealthRoute
+  '/login': typeof LoginRoute
+  '/admin/$resource': typeof AdminResourceRoute
+  '/analytics/$section': typeof AnalyticsSectionRoute
   '/api/ingest': typeof ApiIngestRoute
   '/dev/add-agent': typeof DevAddAgentRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
+  '/analytics': typeof AnalyticsRouteWithChildren
   '/health': typeof HealthRoute
+  '/login': typeof LoginRoute
+  '/admin/$resource': typeof AdminResourceRoute
+  '/analytics/$section': typeof AnalyticsSectionRoute
   '/api/ingest': typeof ApiIngestRoute
   '/dev/add-agent': typeof DevAddAgentRoute
+  '/admin': typeof AdminIndexRoute
   '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
+  '/analytics': typeof AnalyticsRouteWithChildren
   '/health': typeof HealthRoute
+  '/login': typeof LoginRoute
+  '/admin/$resource': typeof AdminResourceRoute
+  '/analytics/$section': typeof AnalyticsSectionRoute
   '/api/ingest': typeof ApiIngestRoute
   '/dev/add-agent': typeof DevAddAgentRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/dev/agents': typeof ApiDevAgentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
+    | '/analytics'
     | '/health'
+    | '/login'
+    | '/admin/$resource'
+    | '/analytics/$section'
     | '/api/ingest'
     | '/dev/add-agent'
+    | '/admin/'
     | '/api/dev/agents'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/about'
+    | '/analytics'
     | '/health'
+    | '/login'
+    | '/admin/$resource'
+    | '/analytics/$section'
     | '/api/ingest'
     | '/dev/add-agent'
+    | '/admin'
     | '/api/dev/agents'
   id:
     | '__root__'
     | '/'
-    | '/about'
+    | '/analytics'
     | '/health'
+    | '/login'
+    | '/admin/$resource'
+    | '/analytics/$section'
     | '/api/ingest'
     | '/dev/add-agent'
+    | '/admin/'
     | '/api/dev/agents'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
+  AnalyticsRoute: typeof AnalyticsRouteWithChildren
   HealthRoute: typeof HealthRoute
+  LoginRoute: typeof LoginRoute
+  AdminResourceRoute: typeof AdminResourceRoute
   ApiIngestRoute: typeof ApiIngestRoute
   DevAddAgentRoute: typeof DevAddAgentRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiDevAgentsRoute: typeof ApiDevAgentsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/health': {
       id: '/health'
       path: '/health'
@@ -117,11 +175,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -129,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev/add-agent': {
@@ -145,6 +210,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analytics/$section': {
+      id: '/analytics/$section'
+      path: '/$section'
+      fullPath: '/analytics/$section'
+      preLoaderRoute: typeof AnalyticsSectionRouteImport
+      parentRoute: typeof AnalyticsRoute
+    }
+    '/admin/$resource': {
+      id: '/admin/$resource'
+      path: '/admin/$resource'
+      fullPath: '/admin/$resource'
+      preLoaderRoute: typeof AdminResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/dev/agents': {
       id: '/api/dev/agents'
       path: '/api/dev/agents'
@@ -155,12 +234,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AnalyticsRouteChildren {
+  AnalyticsSectionRoute: typeof AnalyticsSectionRoute
+}
+
+const AnalyticsRouteChildren: AnalyticsRouteChildren = {
+  AnalyticsSectionRoute: AnalyticsSectionRoute,
+}
+
+const AnalyticsRouteWithChildren = AnalyticsRoute._addFileChildren(
+  AnalyticsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
+  AnalyticsRoute: AnalyticsRouteWithChildren,
   HealthRoute: HealthRoute,
+  LoginRoute: LoginRoute,
+  AdminResourceRoute: AdminResourceRoute,
   ApiIngestRoute: ApiIngestRoute,
   DevAddAgentRoute: DevAddAgentRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiDevAgentsRoute: ApiDevAgentsRoute,
 }
 export const routeTree = rootRouteImport

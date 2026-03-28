@@ -4,7 +4,32 @@
 
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --color-header-bg: var(--header-bg);
 }
+
 
 :root {
   --sea-ink: #173a40;
@@ -26,9 +51,35 @@
   --link-bg-hover: rgba(255, 255, 255, 0.9);
   --hero-a: rgba(79, 184, 178, 0.36);
   --hero-b: rgba(47, 106, 74, 0.2);
+
+  /* Shadcn-style tokens (alias sea/lagoon palette) */
+  --background: var(--bg-base);
+  --foreground: var(--sea-ink);
+  --card: var(--surface-strong);
+  --card-foreground: var(--sea-ink);
+  --popover: var(--surface-strong);
+  --popover-foreground: var(--sea-ink);
+  --primary: var(--lagoon-deep);
+  --primary-foreground: #f8fffc;
+  --secondary: var(--chip-bg);
+  --secondary-foreground: var(--sea-ink);
+  --muted: color-mix(in oklab, var(--surface) 88%, var(--line) 12%);
+  --muted-foreground: var(--sea-ink-soft);
+  --accent: color-mix(in oklab, var(--lagoon) 22%, var(--surface-strong) 78%);
+  --accent-foreground: var(--sea-ink);
+  --destructive: #b83232;
+  --destructive-foreground: #fff8f8;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--lagoon-deep);
+  --radius: 0.625rem;
 }
 
 :root[data-theme="dark"] {
+  --primary-foreground: #0a1418;
+  --destructive: #e85d5d;
+  --destructive-foreground: #1a0808;
+
   --sea-ink: #d7ece8;
   --sea-ink-soft: #afcdc8;
   --lagoon: #60d7cf;
@@ -52,6 +103,10 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --primary-foreground: #0a1418;
+    --destructive: #e85d5d;
+    --destructive-foreground: #1a0808;
+
     --sea-ink: #d7ece8;
     --sea-ink-soft: #afcdc8;
     --lagoon: #60d7cf;

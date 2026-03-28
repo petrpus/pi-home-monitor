@@ -64,8 +64,10 @@ export default function ThemeToggle() {
 
   const label =
     mode === 'auto'
-      ? 'Theme mode: auto (system). Click to switch to light mode.'
-      : `Theme mode: ${mode}. Click to switch mode.`
+      ? 'Režim vzhledu: automaticky podle systému. Kliknutím přepnete na světlý režim.'
+      : mode === 'light'
+        ? 'Režim vzhledu: světlý. Kliknutím přepnete na tmavý režim.'
+        : 'Režim vzhledu: tmavý. Kliknutím přepnete na automatický režim podle systému.'
 
   return (
     <button
@@ -75,7 +77,7 @@ export default function ThemeToggle() {
       title={label}
       className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1.5 text-sm font-semibold text-[var(--sea-ink)] shadow-[0_8px_22px_rgba(30,90,72,0.08)] transition hover:-translate-y-0.5"
     >
-      {mode === 'auto' ? 'Auto' : mode === 'dark' ? 'Dark' : 'Light'}
+      {mode === 'auto' ? 'Auto' : mode === 'dark' ? 'Tmavý' : 'Světlý'}
     </button>
   )
 }

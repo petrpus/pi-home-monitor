@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
+import { DashboardPageShell } from "#/components/dashboard-page-shell"
 import { DashboardShell } from "#/components/dashboard-shell"
 import {
   AlertDialog,
@@ -224,88 +225,83 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
   const colSpan = Math.max(cols.length, 1) + (showRowActions ? 2 : 0)
   return (
     <DashboardShell activeResource={resource}>
-      <div className="mx-auto max-w-[1400px] space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="display-title text-2xl font-bold text-foreground md:text-3xl">{RESOURCE_TITLE[resource]}</h1>
-            <p className="text-sm text-muted-foreground">
-              Stránka {page} / {totalPages}, celkem {total} {czechPoložkaForm(total)}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 sm:items-end">
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="flex flex-row items-center gap-2">
-                <Label htmlFor="admin-page-size" className="shrink-0 text-muted-foreground">
-                  Řádků
-                </Label>
-                <Select
-                  value={String(pageSize)}
-                  onValueChange={(v) => {
-                    setPageSize(Number(v))
-                    setPage(1)
-                  }}
-                >
-                  <SelectTrigger id="admin-page-size" className="h-9 w-[5.5rem]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAGE_SIZE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={String(opt.value)}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  disabled={page <= 1}
-                  aria-label="První stránka"
-                  onClick={() => setPage(1)}
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  disabled={page <= 1}
-                  aria-label="Předchozí stránka"
-                  onClick={() => setPage((p) => p - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  disabled={page >= totalPages}
-                  aria-label="Další stránka"
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  disabled={page >= totalPages}
-                  aria-label="Poslední stránka"
-                  onClick={() => setPage(totalPages)}
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
-              </div>
+      <DashboardPageShell
+        title={RESOURCE_TITLE[resource]}
+        description={`Stránka ${page} / ${totalPages}, celkem ${total} ${czechPoložkaForm(total)}`}
+        headerEnd={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-row items-center gap-2">
+              <Label htmlFor="admin-page-size" className="mb-0 shrink-0 text-muted-foreground">
+                Řádků
+              </Label>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => {
+                  setPageSize(Number(v))
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger id="admin-page-size" className="h-9 w-[5.5rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={String(opt.value)}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                disabled={page <= 1}
+                aria-label="První stránka"
+                onClick={() => setPage(1)}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                disabled={page <= 1}
+                aria-label="Předchozí stránka"
+                onClick={() => setPage((p) => p - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                disabled={page >= totalPages}
+                aria-label="Další stránka"
+                onClick={() => setPage((p) => p + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                disabled={page >= totalPages}
+                aria-label="Poslední stránka"
+                onClick={() => setPage(totalPages)}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        </div>
+        }
+      >
         <Card>
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <CardTitle className="text-base">Filtry</CardTitle>
@@ -606,7 +602,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
             </div>
           </CardContent>
         </Card>
-      </div>
+      </DashboardPageShell>
       <AlertDialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Smazat vybrané?</AlertDialogTitle>

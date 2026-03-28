@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useQuery } from '@tanstack/react-query'
+import { DashboardPageShell } from '#/components/dashboard-page-shell'
 import { DashboardShell } from '#/components/dashboard-shell'
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 import { requireAuthOrRedirect } from '#/features/auth/require-auth'
@@ -21,12 +22,8 @@ function DashboardHome() {
 
   return (
     <DashboardShell>
-      <div className="mx-auto max-w-4xl space-y-6">
-        <div>
-          <h1 className="display-title text-3xl font-bold text-foreground">Přehled</h1>
-          <p className="text-sm text-muted-foreground">Domácí síťový monitoring</p>
-        </div>
-        {q.isLoading ? <p>Načítání…</p> : null}
+      <DashboardPageShell title="Přehled" description="Domácí síťový monitoring">
+        {q.isLoading ? <p className="text-sm text-muted-foreground">Načítání…</p> : null}
         {s?.ok ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -47,7 +44,7 @@ function DashboardHome() {
             </Card>
           </div>
         ) : null}
-      </div>
+      </DashboardPageShell>
     </DashboardShell>
   )
 }

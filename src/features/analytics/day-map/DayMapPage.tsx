@@ -2,6 +2,7 @@ import { useServerFn } from '@tanstack/react-start'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { DashboardPageShell } from '#/components/dashboard-page-shell'
 import { Button } from '#/components/ui/button'
 import { Calendar } from '#/components/ui/calendar'
 import { Label } from '#/components/ui/label'
@@ -120,16 +121,11 @@ export function DayMapPage() {
         : null
 
   return (
-    <div className="mx-auto w-full max-w-[1080px] space-y-6">
-      <div>
-        <p className="island-kicker text-xs font-semibold uppercase tracking-wide">Analytika</p>
-        <h1 className="display-title text-3xl font-bold text-foreground">Mapa dne</h1>
-        <p className="text-sm text-muted-foreground">
-          Přítomnost zařízení v jednotlivých hlášeních vybraného dne (podle časového pásma prohlížeče).
-        </p>
-      </div>
-
-      <div className="island-shell flex min-w-0 flex-col gap-4 rounded-[2rem] p-4 md:p-6">
+    <DashboardPageShell
+      title="Mapa dne"
+      description="Přítomnost zařízení v jednotlivých hlášeních vybraného dne (podle časového pásma prohlížeče)."
+    >
+      <div className="island-shell flex min-w-0 flex-col gap-4 rounded-xl p-4 md:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="min-w-[12rem] flex-1 space-y-2">
             <Label htmlFor="day-map-agent">Agent</Label>
@@ -252,6 +248,6 @@ export function DayMapPage() {
           </div>
         ) : null}
       </div>
-    </div>
+    </DashboardPageShell>
   )
 }

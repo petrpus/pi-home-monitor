@@ -17,6 +17,7 @@
     "test:i": "bun --bun run test:integration",
     "test:integration": "bun --bun run test -- -a src/features/ingest/ingest.integration.test.ts",
     "prisma:generate": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:reset": "prisma migrate reset",

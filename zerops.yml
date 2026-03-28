@@ -24,6 +24,8 @@ zerops:
         - generated
         - package.json
         - node_modules
+        - prisma
+        - prisma.config.ts
         - server.ts
 
       # *optional*: which files / folders
@@ -53,6 +55,10 @@ zerops:
       ports:
         - port: 3000
           httpSupport: true
+
+      # Apply pending migrations before boot (runs in /var/www; safe with multiple replicas via DB locks).
+      initCommands:
+        - bun run prisma:migrate:deploy
 
       # TanStack SSR + static assets from dist/client (/assets/*, favicon, etc.)
       start: bun ./server.ts

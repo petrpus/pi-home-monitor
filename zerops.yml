@@ -1,0 +1,56 @@
+zerops:
+  - setup: app
+    # ==== how to build your application ====
+    build:
+      # what technologies should the build
+      # container be based on (can be an array)
+      base: bun@1.3
+
+      # Same Postgres URL as runtime (Zerops: ${RUNTIME_<KEY>} exposes run env to build).
+      envVariables:
+        DATABASE_URL: ${RUNTIME_DATABASE_URL}
+
+      # what commands to use to build your app
+      buildCommands:
+        - bun install
+        # prisma.config.ts loads DATABASE_URL; generate does not open a DB connection
+        - bun run prisma:generate
+        - bun run build
+
+      # select which files / folders to deploy
+      # after the build successfully finished
+      deployFiles:
+        - dist
+        - generated
+        - package.json
+        - node_modules
+
+      # *optional*: which files / folders
+      # to cache for the next build run
+      cache:
+        - node_modules
+        - bun.lock
+
+    # ==== how to run your application ====
+    run:
+      # what technology should the runtime
+      # container be based on, can be extended
+      # in `run.prepareCommands` using
+      # `sudo zsc install nodejs@20`
+      base: bun@1.3
+
+      # Prisma / app: wire to your Postgres service’s generated connectionString.
+      # Replace `db` with that service’s hostname (Zerops → service → Environment variables).
+      # With default env isolation, this is an explicit reference; alternatively set a
+      # project-level secret DATABASE_URL in the GUI and remove this block.
+      envVariables:
+        DATABASE_URL: ${db_connectionString}
+
+      # what ports your app listens on
+      # and whether it supports http traffic
+      ports:
+        - port: 3000
+          httpSupport: true
+
+      # TanStack Start production server (see dist after `bun run build`)
+      start: bun dist/server/server.js

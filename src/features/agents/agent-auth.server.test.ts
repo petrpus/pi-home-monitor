@@ -21,6 +21,27 @@ describe('agent auth helper', () => {
     expect(verifyApiKey('different-key', hash)).toBe(false)
   })
 
+  it('verifyApiKey returns false when stored hash length differs (no throw)', () => {
+    expect(verifyApiKey('agent-key', 'tooshort')).toBe(false)
+  })
+
+  it('returns null when DB finds no agent for hashed key', async () => {
+    const key = 'orphan-key'
+    let called = false
+    const db = {
+      agent: {
+        findFirst: async () => {
+          called = true
+          return null
+        },
+      },
+    }
+
+    const agent = await authenticateAgentByApiKey(key, db)
+    expect(agent).toBeNull()
+    expect(called).toBe(true)
+  })
+
   it('authenticates by hashed key and excludes disabled agents', async () => {
     const key = 'agent-key'
     const hash = hashApiKey(key)

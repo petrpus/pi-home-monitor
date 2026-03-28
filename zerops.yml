@@ -46,9 +46,6 @@ zerops:
       # Replace `db` with that service’s hostname (Zerops → service → Environment variables).
       # With default env isolation, this is an explicit reference; alternatively set a
       # project-level secret DATABASE_URL in the GUI and remove this block.
-      envVariables:
-        DATABASE_URL: ${DATABASE_URL}
-        # Admin UI: set SESSION_SECRET (32+ chars) and ADMIN_PASSWORD in project secrets.
 
       # what ports your app listens on
       # and whether it supports http traffic

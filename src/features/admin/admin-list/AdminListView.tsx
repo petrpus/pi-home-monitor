@@ -14,7 +14,7 @@ import {
   Undo2,
   X,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { DashboardShell } from "#/components/dashboard-shell"
 import {
@@ -45,7 +45,13 @@ import { RESOURCE_TITLE } from "#/features/admin/admin-resource-copy"
 import { adminListFn, adminMutateFn } from "#/features/admin/adminApiFns"
 import type { AdminResourceKey, MutateBody } from "#/features/admin/admin-types"
 import { adminColumnLabel } from "#/features/admin/admin-list/admin-column-labels"
-import { ADMIN_DELETE_ONLY, READ_ONLY, formatCell, pickColumns } from "#/features/admin/admin-list/constants"
+import {
+  ADMIN_DELETE_ONLY,
+  ADMIN_SYSTEM_GENERATED_ONLY,
+  READ_ONLY,
+  formatCell,
+  pickColumns,
+} from "#/features/admin/admin-list/constants"
 import { AgentLiveStatusCell } from "#/features/admin/admin-list/AgentLiveStatusCell"
 import { DeviceDetailDialog } from "#/features/admin/admin-list/DeviceDetailDialog"
 import { DeviceKindCell } from "#/features/admin/admin-list/DeviceKindCell"
@@ -87,6 +93,10 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
   const [deviceNameEditRow, setDeviceNameEditRow] = useState<Record<string, unknown> | null>(null)
   const [deviceDetailRow, setDeviceDetailRow] = useState<Record<string, unknown> | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  useEffect(() => {
+    setSelected(new Set())
+    setBulkOpen(false)
+  }, [resource])
   const listFn = useServerFn(adminListFn)
   const mutateFn = useServerFn(adminMutateFn)
   const filters = useMemo(() => {
@@ -157,6 +167,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
   const deleteOnly = ADMIN_DELETE_ONLY.includes(resource)
   const showRowActions = !readOnly
   const showCreateEdit = showRowActions && !deleteOnly
+  const showManualCreate = showCreateEdit && !ADMIN_SYSTEM_GENERATED_ONLY.includes(resource)
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const toggleSort = (col: string) => {
     if (sortBy === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"))
@@ -257,7 +268,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <CardTitle className="text-base">Filtry</CardTitle>
             <div className="flex flex-wrap gap-2">
-              {showCreateEdit ? (
+              {showManualCreate ? (
                 <Button type="button" size="sm" className="gap-1" onClick={() => setCreateOpen(true)}>
                   <Plus className="h-4 w-4" />Nový
                 </Button>
@@ -568,7 +579,7 @@ export function AdminEntityListPage({ resource }: { resource: AdminResourceKey }
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {showCreateEdit ? (
+      {showManualCreate ? (
         <EntityFormDialog open={createOpen} onOpenChange={setCreateOpen} mode="create" resource={resource} row={null} onSubmit={(payload) => { void mutate.mutateAsync({ operation: "create", resource, payload, clientOperationId: crypto.randomUUID() }); setCreateOpen(false) }} />
       ) : null}
       {showCreateEdit ? (

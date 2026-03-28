@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useQuery } from '@tanstack/react-query'
 import { DashboardShell } from '#/components/dashboard-shell'
@@ -47,11 +47,6 @@ function DashboardHome() {
             </Card>
           </div>
         ) : null}
-        <p className="text-sm">
-          <Link to="/admin/$resource" params={{ resource: "alerts" }} className="text-primary underline">
-            Správa dat
-          </Link>
-        </p>
       </div>
     </DashboardShell>
   )

@@ -11,13 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HealthRouteImport } from './routes/health'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as DayMapRouteImport } from './routes/day-map'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AnalyticsIndexRouteImport } from './routes/analytics.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiIngestRouteImport } from './routes/api.ingest'
-import { Route as AnalyticsDayMapRouteImport } from './routes/analytics.day-map'
-import { Route as AnalyticsSectionRouteImport } from './routes/analytics.$section'
 import { Route as AdminResourceRouteImport } from './routes/admin.$resource'
 
 const LoginRoute = LoginRouteImport.update({
@@ -30,20 +27,15 @@ const HealthRoute = HealthRouteImport.update({
   path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
+const DayMapRoute = DayMapRouteImport.update({
+  id: '/day-map',
+  path: '/day-map',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsIndexRoute = AnalyticsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AnalyticsRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
@@ -55,16 +47,6 @@ const ApiIngestRoute = ApiIngestRouteImport.update({
   path: '/api/ingest',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AnalyticsDayMapRoute = AnalyticsDayMapRouteImport.update({
-  id: '/day-map',
-  path: '/day-map',
-  getParentRoute: () => AnalyticsRoute,
-} as any)
-const AnalyticsSectionRoute = AnalyticsSectionRouteImport.update({
-  id: '/$section',
-  path: '/$section',
-  getParentRoute: () => AnalyticsRoute,
-} as any)
 const AdminResourceRoute = AdminResourceRouteImport.update({
   id: '/admin/$resource',
   path: '/admin/$resource',
@@ -73,81 +55,65 @@ const AdminResourceRoute = AdminResourceRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRouteWithChildren
+  '/day-map': typeof DayMapRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/admin/$resource': typeof AdminResourceRoute
-  '/analytics/$section': typeof AnalyticsSectionRoute
-  '/analytics/day-map': typeof AnalyticsDayMapRoute
   '/api/ingest': typeof ApiIngestRoute
   '/admin/': typeof AdminIndexRoute
-  '/analytics/': typeof AnalyticsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/day-map': typeof DayMapRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/admin/$resource': typeof AdminResourceRoute
-  '/analytics/$section': typeof AnalyticsSectionRoute
-  '/analytics/day-map': typeof AnalyticsDayMapRoute
   '/api/ingest': typeof ApiIngestRoute
   '/admin': typeof AdminIndexRoute
-  '/analytics': typeof AnalyticsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRouteWithChildren
+  '/day-map': typeof DayMapRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/admin/$resource': typeof AdminResourceRoute
-  '/analytics/$section': typeof AnalyticsSectionRoute
-  '/analytics/day-map': typeof AnalyticsDayMapRoute
   '/api/ingest': typeof ApiIngestRoute
   '/admin/': typeof AdminIndexRoute
-  '/analytics/': typeof AnalyticsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/analytics'
+    | '/day-map'
     | '/health'
     | '/login'
     | '/admin/$resource'
-    | '/analytics/$section'
-    | '/analytics/day-map'
     | '/api/ingest'
     | '/admin/'
-    | '/analytics/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/day-map'
     | '/health'
     | '/login'
     | '/admin/$resource'
-    | '/analytics/$section'
-    | '/analytics/day-map'
     | '/api/ingest'
     | '/admin'
-    | '/analytics'
   id:
     | '__root__'
     | '/'
-    | '/analytics'
+    | '/day-map'
     | '/health'
     | '/login'
     | '/admin/$resource'
-    | '/analytics/$section'
-    | '/analytics/day-map'
     | '/api/ingest'
     | '/admin/'
-    | '/analytics/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AnalyticsRoute: typeof AnalyticsRouteWithChildren
+  DayMapRoute: typeof DayMapRoute
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
   AdminResourceRoute: typeof AdminResourceRoute
@@ -171,11 +137,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
+    '/day-map': {
+      id: '/day-map'
+      path: '/day-map'
+      fullPath: '/day-map'
+      preLoaderRoute: typeof DayMapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -184,13 +150,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/analytics/': {
-      id: '/analytics/'
-      path: '/'
-      fullPath: '/analytics/'
-      preLoaderRoute: typeof AnalyticsIndexRouteImport
-      parentRoute: typeof AnalyticsRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -206,20 +165,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/analytics/day-map': {
-      id: '/analytics/day-map'
-      path: '/day-map'
-      fullPath: '/analytics/day-map'
-      preLoaderRoute: typeof AnalyticsDayMapRouteImport
-      parentRoute: typeof AnalyticsRoute
-    }
-    '/analytics/$section': {
-      id: '/analytics/$section'
-      path: '/$section'
-      fullPath: '/analytics/$section'
-      preLoaderRoute: typeof AnalyticsSectionRouteImport
-      parentRoute: typeof AnalyticsRoute
-    }
     '/admin/$resource': {
       id: '/admin/$resource'
       path: '/admin/$resource'
@@ -230,25 +175,9 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AnalyticsRouteChildren {
-  AnalyticsSectionRoute: typeof AnalyticsSectionRoute
-  AnalyticsDayMapRoute: typeof AnalyticsDayMapRoute
-  AnalyticsIndexRoute: typeof AnalyticsIndexRoute
-}
-
-const AnalyticsRouteChildren: AnalyticsRouteChildren = {
-  AnalyticsSectionRoute: AnalyticsSectionRoute,
-  AnalyticsDayMapRoute: AnalyticsDayMapRoute,
-  AnalyticsIndexRoute: AnalyticsIndexRoute,
-}
-
-const AnalyticsRouteWithChildren = AnalyticsRoute._addFileChildren(
-  AnalyticsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AnalyticsRoute: AnalyticsRouteWithChildren,
+  DayMapRoute: DayMapRoute,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
   AdminResourceRoute: AdminResourceRoute,

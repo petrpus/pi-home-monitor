@@ -76,16 +76,28 @@ describe('adminMutate', () => {
     expect(create).toHaveBeenCalledTimes(1)
   })
 
-  it('returns validation error for invalid alert create payload', async () => {
+  it('throws when create is not allowed for alerts', async () => {
     getPrismaClient.mockReturnValue({})
 
-    const out = await adminMutate({
-      operation: 'create',
-      resource: 'alerts',
-      payload: { title: '' },
-    })
+    await expect(
+      adminMutate({
+        operation: 'create',
+        resource: 'alerts',
+        payload: {},
+      }),
+    ).rejects.toThrow(/create not allowed for resource alerts/)
+  })
 
-    expect(out).toMatchObject({ error: 'validation' })
+  it('throws when create is not allowed for devices', async () => {
+    getPrismaClient.mockReturnValue({})
+
+    await expect(
+      adminMutate({
+        operation: 'create',
+        resource: 'devices',
+        payload: {},
+      }),
+    ).rejects.toThrow(/create not allowed for resource devices/)
   })
 
   it('rejects bulkDelete with more than 100 ids', async () => {
@@ -131,28 +143,6 @@ describe('adminMutate', () => {
     })
   })
 
-  it('creates alert with valid payload', async () => {
-    const create = vi.fn().mockResolvedValue({ id: 'al-1' })
-    getPrismaClient.mockReturnValue({ alert: { create } })
-
-    const out = await adminMutate({
-      operation: 'create',
-      resource: 'alerts',
-      payload: {
-        type: AlertType.NEW_DEVICE,
-        severity: AlertSeverity.INFO,
-        title: 'T',
-      },
-    })
-
-    expect(out).toMatchObject({ result: { id: 'al-1' } })
-    expect(create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        type: AlertType.NEW_DEVICE,
-        title: 'T',
-      }),
-    })
-  })
 })
 
 describe('adminList', () => {

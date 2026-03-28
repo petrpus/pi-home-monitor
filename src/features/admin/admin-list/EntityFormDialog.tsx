@@ -25,12 +25,8 @@ export function EntityFormDialog({
   useEffect(() => {
     if (!open) return
     if (mode === "create") {
-      if (resource === "alerts") {
-        setJson(JSON.stringify({ type: "NEW_DEVICE", severity: "INFO", title: "Nové upozornění" }, null, 2))
-      } else if (resource === "agents") {
+      if (resource === "agents") {
         setJson(JSON.stringify({ name: "Agent", apiKey: "change-me-min-8-chars" }, null, 2))
-      } else if (resource === "devices") {
-        setJson(JSON.stringify({ kind: "NETWORK", primaryMac: "00:11:22:33:44:55" }, null, 2))
       } else setJson("{}")
     } else if (row) {
       const clone = { ...row }

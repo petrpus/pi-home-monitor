@@ -6,6 +6,9 @@ export const READ_ONLY: AdminResourceKey[] = []
 /** Delete and bulk-delete only (no Nový / Upravit). */
 export const ADMIN_DELETE_ONLY: AdminResourceKey[] = ["rawReports"]
 
+/** Created by ingest / domain logic only — no admin “Nový” or create RPC. */
+export const ADMIN_SYSTEM_GENERATED_ONLY: AdminResourceKey[] = ["alerts", "devices"]
+
 /** Czech short month names (capitalized), matching e.g. "1. Led 2022 17:24:31". */
 const CZ_MONTHS_SHORT = [
   "Led",

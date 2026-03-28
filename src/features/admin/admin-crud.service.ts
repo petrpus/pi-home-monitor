@@ -1,11 +1,6 @@
 import * as z from 'zod'
 import type { Prisma } from '../../../generated/prisma/client'
-import {
-  AgentStatus,
-  AlertSeverity,
-  AlertType,
-  DeviceKind,
-} from '../../../generated/prisma/client'
+import { AgentStatus } from '../../../generated/prisma/client'
 import { agentReportFreshnessThreshold } from '#/features/agents/agent-activity'
 import { hashApiKey } from '#/features/agents/agent-auth.server'
 import { getPrismaClient } from '#/lib/prismaDb'
@@ -255,16 +250,6 @@ export async function adminList(q: ListQuery): Promise<{
   }
 }
 
-const alertCreateSchema = z.object({
-  type: z.enum([AlertType.NEW_DEVICE, AlertType.AGENT_OFFLINE]),
-  severity: z.enum([AlertSeverity.INFO, AlertSeverity.WARNING, AlertSeverity.CRITICAL]),
-  title: z.string().min(1).max(500),
-  message: z.string().max(5000).optional(),
-  agentId: z.string().optional(),
-  deviceId: z.string().optional(),
-  rawReportId: z.string().optional(),
-})
-
 const alertUpdateSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   message: z.string().max(5000).optional().nullable(),
@@ -281,15 +266,6 @@ const agentUpdateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   locationLabel: z.string().max(500).optional().nullable(),
   status: z.enum([AgentStatus.ONLINE, AgentStatus.OFFLINE, AgentStatus.DISABLED]).optional(),
-})
-
-const deviceCreateSchema = z.object({
-  kind: z.enum([DeviceKind.NETWORK, DeviceKind.BLUETOOTH, DeviceKind.BLE, DeviceKind.UNKNOWN]),
-  primaryMac: z.string().min(1).max(64),
-  normalizedName: z.string().max(500).optional().nullable(),
-  vendor: z.string().max(500).optional().nullable(),
-  lastIpAddress: z.string().max(64).optional().nullable(),
-  lastRssi: z.number().int().min(-200).max(50).optional().nullable(),
 })
 
 const deviceUpdateSchema = z.object({
@@ -315,25 +291,6 @@ export async function adminMutate(
   switch (body.operation) {
     case 'create': {
       switch (body.resource) {
-        case 'alerts': {
-          const parsed = alertCreateSchema.safeParse(body.payload)
-          if (!parsed.success) {
-            return { error: 'validation', detail: parsed.error.message }
-          }
-          const d = parsed.data
-          const row = await prisma.alert.create({
-            data: {
-              type: d.type,
-              severity: d.severity,
-              title: d.title,
-              message: d.message ?? null,
-              agentId: d.agentId ?? null,
-              deviceId: d.deviceId ?? null,
-              rawReportId: d.rawReportId ?? null,
-            },
-          })
-          return { result: row }
-        }
         case 'agents': {
           const parsed = agentCreateSchema.safeParse(body.payload)
           if (!parsed.success) {
@@ -360,31 +317,8 @@ export async function adminMutate(
           })
           return { result: row }
         }
-        case 'devices': {
-          const parsed = deviceCreateSchema.safeParse(body.payload)
-          if (!parsed.success) {
-            return { error: 'validation', detail: parsed.error.message }
-          }
-          const now = new Date()
-          const trimmedName = parsed.data.normalizedName?.trim()
-          const trimmedIp = parsed.data.lastIpAddress?.trim()
-          const row = await prisma.device.create({
-            data: {
-              kind: parsed.data.kind,
-              primaryMac: parsed.data.primaryMac,
-              normalizedName: trimmedName && trimmedName.length > 0 ? trimmedName : null,
-              nameUserSet: Boolean(trimmedName && trimmedName.length > 0),
-              vendor: parsed.data.vendor ?? null,
-              lastIpAddress: trimmedIp && trimmedIp.length > 0 ? trimmedIp : null,
-              lastRssi: parsed.data.lastRssi ?? null,
-              firstSeenAt: now,
-              lastSeenAt: now,
-            },
-          })
-          return { result: row }
-        }
         default:
-          assertMutableResource(body.resource, 'create', ['alerts', 'agents', 'devices'])
+          assertMutableResource(body.resource, 'create', ['agents'])
           return { error: 'unsupported' }
       }
     }

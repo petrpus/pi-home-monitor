@@ -10,7 +10,7 @@ export const RESOURCE_TITLE: Record<AdminResourceKey, string> = {
 
 export const NAV: { to: string; label: string }[] = [
   { to: '/', label: 'Přehled' },
-  { to: '/analytics', label: 'Analytika' },
+  { to: '/day-map', label: 'Mapa dne' },
 ]
 
 export const ADMIN_LINKS: { resource: AdminResourceKey; to: string }[] = [
